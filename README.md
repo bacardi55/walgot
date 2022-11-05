@@ -48,7 +48,7 @@ On detail page:
 MVP:
 
 - [x] Retrieve articles from wallabag
-- [-] Articles list view
+- [x] Articles list view
   - [x] Display all article in a scrollable table
   - [x] Filter entries:
     - [x] Only unread
@@ -61,10 +61,10 @@ MVP:
   - [ ] Archive (mark as read)
   - [ ] Mark as unread
   - [ ] Toggle star 
-- [ ] Configurable
+- [x] Configurable
   - [x] Load a json configuration file
-  - [ ] Make configuration file location configurable
-    - [ ] Manage shortpath (eg: "~/")
+  - [x] Make configuration file location configurable
+    - [x] Manage shortpath (eg: "~/")
 
 
 After MVP:
@@ -77,7 +77,9 @@ After MVP:
 - [ ] Improve UI
   - [ ] Improve table readability
   - [ ] Improve article view 
-
+- [ ] Auto create default configuration file
+- [ ] Wizard to create credentials.json ?
+- [ ] Add Configuration option
 
 To Investigate:
 
