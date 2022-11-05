@@ -26,13 +26,3 @@ release:
 	GOOS=linux GOARCH=arm ${GOCMD} build -ldflags "$(GOLDFLAGS)" -o ${BINDIR}/${BINARY}_${VERSION}_linux_arm
 	GOOS=linux GOARCH=arm64 ${GOCMD} build -ldflags "$(GOLDFLAGS)" -o ${BINDIR}/${BINARY}_${VERSION}_linux_arm64
 	GOOS=linux GOARCH=386 ${GOCMD} build -ldflags "$(GOLDFLAGS)" -o ${BINDIR}/${BINARY}_${VERSION}_linux_386
-
-.PHONY: dependencies
-dependencies:
-	${GOCMD} get github.com/Strubbl/wallabago/v7 v7.0.4
-	${GOCMD} get github.com/charmbracelet/bubbles v0.14.0
-	${GOCMD} get github.com/charmbracelet/bubbletea v0.22.1
-	${GOCMD} get github.com/charmbracelet/lipgloss v0.6.0
-	${GOCMD} get github.com/mitchellh/go-homedir v1.1.0
-	${GOCMD} get github.com/muesli/reflow v0.3.0
-	${GOCMD} get github.com/k3a/html2text v1.0.8
