@@ -3,10 +3,49 @@
 **The status of this code is still very early stage and work in progress. This isn't yet at MVP stage so be carreful while using it!**
 
 ## installation
-TODO
+
+### binary
+
+Download one of the binary available on the binary file in the release page. 
+Make sure it is executable (with `chmod +x binaryFile`) and then run walgot with the command:
+
+### compile
+Use the makefile provided and run `make build`, it will create a binary file in a `bin` directory.
+
+``` bash
+git clone https://… # TODO
+cd walgot
+make build
+mkdir ~/.config/walgot/
+cp example/*.json ~/.config/walgot/
+# NOTA: Here you need to edit at least ~/.config/walgot/credentials.json
+# Then start walgot:
+./bin/walgot
+```
 
 ## configuration
-TODO
+Walgot is configure with 2 different files:
+
+### walgot.json
+
+The main configuration file, in json format. The default value are as below:
+
+``` json
+{
+    "CredentialsFile": "~/.config/walgot/credentials.json",
+    "DefaultListViewUnread": true,
+    "DefaultListViewStarred": false,
+    "DebugMode": true,
+    "LogFile": "/tmp/walgot.log",
+    "NbEntriesPerAPICall": 255
+}
+```
+
+You only need to set the value you want to change in your configuration file, not everything.
+
+### credentials.json
+
+In the `walgot.json` file above, we indicate the path to the credentials file for connecting to Wallabag. The format is as follow:
 
 ``` json
 {
@@ -18,29 +57,59 @@ TODO
 }
 ```
 
+Default place is `~/.config/walgot/credentials.json` but can be changed in the `walgot.json` file.
+
 ## Usage:
 
-Everywhere:
-- ctrl+c: quit
-- h: help
+### Start
+
+``` help
+Usage walgot:
+  -config string
+    	file name of config JSON file (default "~/.config/walgot/walgot.json")
+  -d	enable debug output
+  -version
+    	get walgot version
+```
+
+example:
+
+``` bash
+/path/to/walgot -d -config "/my/config/file.json"
+```
 
 
-On listing page:
-- r: reload article from wallabag via APIs, takes time depending on the number of articles saved
-- u: toggle display only unread articles (disable archived filter)
-- s: toggle display only starred articles
-- a: toggle archived only articles (disable unread filter)
-- h: display help
-- ↑ or k / ↓ or j: move up / down one item in the list
-- page down / page up: move up / down 10 items in the list
-- home: go to the top of the list
-- end: go to bottom of the list
-- enter: select entry to read content
-- q: quit
+### Keybinds
 
-On detail page:
-- q: return to list
-- ↑ or k / ↓ or j: go up / down
+``` 
+	On all screens:
+	- ctrl+c: quit
+	- h: help (this page)
+
+
+	On listing page:
+	- r: reload article from wallabag via APIs, takes time depending on the number of articles saved
+	- u: toggle display only unread articles (disable archived filter)
+	- s: toggle display only starred articles
+	- a: toggle archived only articles (disable unread filter)
+	- h: display help
+	- ↑ or k / ↓ or j: move up / down one item in the list
+	- page down / page up: move up / down 10 items in the list
+	- home: go to the top of the list
+	- end: go to bottom of the list
+	- enter: select entry to read content
+	- q: quit
+
+	On detail page:
+	- q: return to list
+	- ↑ or k / ↓ or j: go up / down
+
+    On dialog (modal) view:
+    - "enter" or "esc": close the dialog
+
+	On help page:
+	- q: return to list
+```
 
 
 ## Remaining TODOs:
@@ -80,7 +149,7 @@ After MVP:
 - [ ] Auto create default configuration file
 - [ ] Wizard to create credentials.json ?
 - [ ] Add Configuration option
-- [ ] Display possible API errors in a dialog box
+- [x] Display possible API errors in a dialog box
 
 To Investigate:
 

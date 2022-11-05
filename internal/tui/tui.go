@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -17,7 +16,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/reflow/wordwrap"
-	"jaytaylor.com/html2text"
+
+	"github.com/k3a/html2text"
 )
 
 // ** Model related Struct ** //
@@ -46,18 +46,24 @@ type walgotTableOptions struct {
 
 // Model structure
 type model struct {
-	Table                table.Model
-	Viewport             viewport.Model
+	// Sub models related:
+	Table         table.Model
+	Viewport      viewport.Model
+	DialogMessage string
+	Spinner       spinner.Model
+	// Tui Status related
+	Ready       bool
+	Reloading   bool
+	CurrentView string
+	Options     walgotTableOptions
+	// Wallabag(o) related:
 	Entries              []wallabago.Item
-	Ready                bool
-	Reloading            bool
 	SelectedID           int
-	TermSize             termSize
-	CurrentView          string
-	Options              walgotTableOptions
-	Spinner              spinner.Model
 	TotalEntriesOnServer int
-	DebugMode            bool
+	// Configs
+	NbEntriesPerAPICall int
+	TermSize            termSize
+	DebugMode           bool
 }
 
 // NewModel returns default model for walgot.
@@ -75,6 +81,7 @@ func NewModel(config config.WalgotConfig) model {
 		CurrentView:          "list",
 		TotalEntriesOnServer: 0,
 		Spinner:              s,
+		NbEntriesPerAPICall:  config.NbEntriesPerAPICall,
 		DebugMode:            config.DebugMode,
 		Options: walgotTableOptions{
 			Filters: walgotTableFilters{
@@ -106,7 +113,7 @@ func requestWallabagNbEntries() tea.Msg {
 
 	if e != nil {
 		return wallabagoResponseErrorMsg{
-			message:        "couldn't retrieve the total number of entries from wallabag API",
+			message:        "Error:\n couldn't retrieve the total number of entries from wallabag API",
 			wallabagoError: e,
 		}
 	}
@@ -115,13 +122,10 @@ func requestWallabagNbEntries() tea.Msg {
 }
 
 // Callback for requesting entries via API.
-func requestWallabagEntries(nbArticles int) tea.Cmd {
-	// TODO: Make this configurable.
-	articleByAPICall := 55
-
+func requestWallabagEntries(nbArticles, nbEntriesPerAPICall int) tea.Cmd {
 	return func() tea.Msg {
-		// Let's not request thousands or article at one, 555 is already big…
-		limitArticleByAPICall := articleByAPICall
+		limitArticleByAPICall := nbEntriesPerAPICall
+		log.Println("API call, limit is", limitArticleByAPICall)
 		nbCalls := 1
 		if nbArticles > limitArticleByAPICall {
 			nbCalls = nbArticles / limitArticleByAPICall
@@ -138,7 +142,7 @@ func requestWallabagEntries(nbArticles int) tea.Cmd {
 
 			if err != nil {
 				return wallabagoResponseErrorMsg{
-					message:        "couldn't retrieve the entries from wallabag API",
+					message:        "Error:\n couldn't retrieve the entries from wallabag API",
 					wallabagoError: err,
 				}
 			}
@@ -172,6 +176,7 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.DebugMode {
 		log.Println(fmt.Sprintf("Update message received, type: %T", msg))
+		log.Println("Current view:", m.CurrentView)
 	}
 
 	if msg, ok := msg.(tea.KeyMsg); ok {
@@ -190,7 +195,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.SelectedID = int(v)
 	}
 
-	if m.CurrentView == "help" {
+	// Priority order: dialog > help > detail > list.
+	if m.DialogMessage != "" {
+		return updateDialogView(msg, m)
+	} else if m.CurrentView == "help" {
 		return updateHelpView(msg, m)
 	}
 
@@ -201,11 +209,162 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return updateListView(msg, m)
 }
 
+// ** Update related functions ** //
+// Manage update messages on the help view.
+func updateHelpView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q":
+			m.CurrentView = "list"
+		}
+	}
+	return m, nil
+}
+
+// Manage update messages for the detail entry view.
+func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
+	switch msg := msg.(type) {
+	// A row has been selected, display article detail:
+	case walgotSelectRowMsg:
+		m.CurrentView = "detail"
+		m.Viewport.SetContent(getDetailViewportContent(m.SelectedID, m.Entries))
+
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q":
+			m.CurrentView = "list"
+			// Reset selection.
+			m.SelectedID = 0
+			// Make sure to scrollback up for other articles:
+			m.Viewport.GotoTop()
+		case "j", "down":
+			m.Viewport.HalfViewDown()
+		case "k", "up":
+			m.Viewport.HalfViewUp()
+		case "S":
+			log.Println("Star article")
+			// TODO for MVP: Star article.
+		case "A":
+			log.Println("Archived entry")
+			// TODO for MVP: Archive article.
+		}
+	}
+
+	m.Viewport, cmd = m.Viewport.Update(msg)
+	cmds = append(cmds, cmd)
+	return m, tea.Batch(cmds...)
+}
+
+// Manage update messages for the list view.
+func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "enter":
+			sID, _ := strconv.Atoi(m.Table.SelectedRow()[0])
+			return m, selectEntryCommand(sID)
+		case "j", "down":
+			m.Table.MoveDown(1)
+		case "pgdown":
+			m.Table.MoveDown(10)
+		case "k", "up":
+			m.Table.MoveUp(1)
+		case "pgup":
+			m.Table.MoveUp(10)
+		case "alt+[H":
+			m.Table.GotoTop()
+		case "alt+[F":
+			m.Table.GotoBottom()
+		case "q":
+			return m, tea.Quit
+		case "r":
+			// If already reloading, do nothing
+			if m.Reloading {
+				return m, nil
+			}
+			// Status as reloading:
+			m.Reloading = true
+			// Reset number of entries:
+			m.TotalEntriesOnServer = 0
+			return m, requestWallabagNbEntries
+		// Filters for the table list:
+		case "u", "s", "a":
+			listViewFiltersUpdate(msg.String(), &m)
+		}
+
+	// When resizing the window, sizes needs to change everywhere…
+	case tea.WindowSizeMsg:
+		m.TermSize = termSize{msg.Width, msg.Height}
+		// TODO: Seems to bug when resizing though:
+		windowSizeUpdate(&m)
+
+	// Retrieved total number of entities from API:
+	case wallabagoResponseNbEntitiesMsg:
+		m.TotalEntriesOnServer = int(msg)
+		// We now have the number of entries, we can trigger
+		// the process to retrieve all these entries
+		return m, tea.Batch(
+			requestWallabagEntries(m.TotalEntriesOnServer, m.NbEntriesPerAPICall),
+			m.Spinner.Tick,
+		)
+
+	// Retrieved entities from API, data has changed:
+	case wallabagoResponseEntitiesMsg:
+		// Response received, we are not reloading anymore:
+		m.Reloading = false
+		m.Entries = msg
+		if m.DebugMode {
+			log.Println("wallabagoResponseEntityMsg", len(msg))
+		}
+		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+
+	// Manage errors from wallabag APIs (wallabago):
+	case wallabagoResponseErrorMsg:
+		log.Println("Error from wallabago API:", msg.message)
+		m.Reloading = false
+		if m.DebugMode {
+			log.Println("Wallabago error:")
+			log.Println(msg.wallabagoError)
+		}
+		m.DialogMessage = msg.message
+
+	case spinner.TickMsg:
+		// Spin only if it is still displaying the reload screen:
+		if m.Reloading {
+			m.Spinner, cmd = m.Spinner.Update(msg)
+			return m, cmd
+		}
+	}
+
+	return m, cmd
+}
+
+// Manage update messages for dialog view.
+func updateDialogView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "enter", "esc":
+			// Validates dialog, so close it by resetting message:
+			m.DialogMessage = ""
+		}
+	}
+
+	return m, nil
+}
+
 // View method.
 func (m model) View() string {
 	return fmt.Sprintf("%s\n%s\n%s", m.headerView(), m.mainView(), m.footerView())
 }
 
+// ** View related functions. ** //
 // Return the header part of the view.
 func (m model) headerView() string {
 	titleStyle := lipgloss.
@@ -269,173 +428,33 @@ func (m model) mainView() string {
 		return "\n   Initializing…"
 	}
 	if m.Reloading {
-		// TODO for MVP: Move to dedicated functions
-		text := "Loading all"
-		if m.TotalEntriesOnServer > 0 {
-			text += " " + strconv.Itoa(m.TotalEntriesOnServer)
-		}
-		text += " entries from wallabag…"
-		return lipgloss.NewStyle().
-			Width(m.TermSize.Width).
-			Align(lipgloss.Center).
-			Render(m.Spinner.View() + text)
+		return reloadingView(m)
 	}
 
-	if m.CurrentView == "help" {
-		// Return help view:
+	// Priority: dialog > help > detail > list.
+	if m.DialogMessage != "" {
+		return dialogView(m)
+	} else if m.CurrentView == "help" {
 		return helpView(m)
-
 	} else if m.SelectedID > 0 {
-		// Return detail view:
 		return entryDetailView(m)
 	}
-	// Return list view:
 	return listView(m)
 }
 
-// ** Update related functions ** //
-// Manage update messages on the help view.
-func updateHelpView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
-			m.CurrentView = "list"
-		}
+func reloadingView(m model) string {
+	text := "Loading all"
+	if m.TotalEntriesOnServer > 0 {
+		text += " " + strconv.Itoa(m.TotalEntriesOnServer)
 	}
-	return m, nil
+	text += " entries from wallabag…"
+
+	return lipgloss.NewStyle().
+		Width(m.TermSize.Width).
+		Align(lipgloss.Center).
+		Render(m.Spinner.View() + text)
 }
 
-// Manage update for the detail entry view.
-func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	var cmds []tea.Cmd
-
-	switch msg := msg.(type) {
-	// A row has been selected, display article detail:
-	case walgotSelectRowMsg:
-		m.CurrentView = "detail"
-
-		if c, err := getDetailViewportContent(m.SelectedID, m.Entries); err == nil {
-			m.Viewport.SetContent(c)
-		} else {
-			log.Println("Error retrieving content for entry", m.SelectedID)
-		}
-
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
-			m.CurrentView = "list"
-			// Reset selection.
-			m.SelectedID = 0
-			// Make sure to scrollback up for other articles:
-			m.Viewport.GotoTop()
-		case "j", "down":
-			m.Viewport.HalfViewDown()
-		case "k", "up":
-			m.Viewport.HalfViewUp()
-		case "S":
-			log.Println("Star article")
-			// TODO for MVP: Star article.
-		case "A":
-			log.Println("Archived entry")
-			// TODO for MVP: Archive article.
-		}
-	}
-
-	m.Viewport, cmd = m.Viewport.Update(msg)
-	cmds = append(cmds, cmd)
-	return m, tea.Batch(cmds...)
-}
-
-// Manage updates for the list view.
-func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
-	// TODO for MVP: Refactor this function.
-	var cmd tea.Cmd
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
-			if m.DebugMode {
-				log.Println("Selected row:", m.Table.SelectedRow())
-			}
-			sID, _ := strconv.Atoi(m.Table.SelectedRow()[0])
-			return m, selectEntryCommand(sID)
-		case "j", "down":
-			m.Table.MoveDown(1)
-		case "pgdown":
-			m.Table.MoveDown(10)
-		case "k", "up":
-			m.Table.MoveUp(1)
-		case "pgup":
-			m.Table.MoveUp(10)
-		case "alt+[H":
-			m.Table.GotoTop()
-		case "alt+[F":
-			m.Table.GotoBottom()
-		case "q":
-			return m, tea.Quit
-		case "r":
-			log.Println("Loading entries from API")
-			// Status as reloading:
-			m.Reloading = true
-			// Reset number of entries:
-			m.TotalEntriesOnServer = 0
-			return m, requestWallabagNbEntries
-		// Filters for the table list:
-		case "u", "s", "a":
-			listViewFiltersUpdate(msg.String(), &m)
-		}
-
-	// When resizing the window, sizes needs to change everywhere…
-	case tea.WindowSizeMsg:
-		m.TermSize = termSize{msg.Width, msg.Height}
-		// TODO: Seems to bug when resizing though:
-		windowSizeUpdate(&m)
-
-	// Retrieved total number of entities from API:
-	case wallabagoResponseNbEntitiesMsg:
-		m.TotalEntriesOnServer = int(msg)
-		// We now have the number of entries, we can trigger
-		// the process to retrieve all these entries
-		return m, tea.Batch(
-			requestWallabagEntries(m.TotalEntriesOnServer),
-			m.Spinner.Tick,
-		)
-
-	// Retrieved entities from API, data has changed:
-	case wallabagoResponseEntitiesMsg:
-		// Response received, we are not reloading anymore:
-		m.Reloading = false
-		m.Entries = msg
-		if m.DebugMode {
-			log.Println("wallabagoResponseEntityMsg", len(msg))
-		}
-		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
-
-	// Manage errors from wallabag APIs (wallabago):
-	case wallabagoResponseErrorMsg:
-		log.Println("Error from wallabago API:", msg.message)
-		// TODO: Print error message in a dialog message?
-		m.Reloading = false
-		if m.DebugMode {
-			log.Println("Wallabago error:")
-			log.Println(msg.wallabagoError)
-		}
-
-	case spinner.TickMsg:
-		// Spin only if it is still displaying the reload screen:
-		if m.Reloading {
-			m.Spinner, cmd = m.Spinner.Update(msg)
-			return m, cmd
-		}
-	}
-
-	return m, cmd
-}
-
-// ** View related functions. ** //
 // Help view.
 func helpView(m model) string {
 	text := []byte(`Help:
@@ -462,6 +481,9 @@ func helpView(m model) string {
 	- q: return to list
 	- ↑ or k / ↓ or j: go up / down
 
+    On dialog (modal) view:
+    - "enter" or "esc": close the dialog
+
 	On help page:
 	- q: return to list
 `)
@@ -485,6 +507,40 @@ func entryDetailView(m model) string {
 // Get list view.
 func listView(m model) string {
 	return m.Table.View()
+}
+
+// Get dialog view.
+func dialogView(m model) string {
+	dialogBoxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#874BFD")).
+		Padding(1, 0).
+		BorderTop(true).
+		BorderLeft(true).
+		BorderRight(true).
+		BorderBottom(true)
+
+	okButton := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FFF7DB")).
+		Background(lipgloss.Color("#888B7E")).
+		Padding(0, 3).
+		MarginTop(1).
+		Underline(true).
+		Render("Ok")
+
+	question := lipgloss.
+		NewStyle().
+		Width(50).
+		Align(lipgloss.Center).
+		Render(m.DialogMessage)
+
+	ui := lipgloss.JoinVertical(lipgloss.Center, question, okButton)
+
+	return lipgloss.
+		NewStyle().
+		Width(m.TermSize.Width).
+		Align(lipgloss.Center).
+		Render(dialogBoxStyle.Render(ui))
 }
 
 // ** Table related functions ** //
@@ -572,15 +628,11 @@ func createViewTable(maxWidth int, maxHeight int) table.Model {
 
 // ** Viewport related functions ** //
 // Generate content for article detail viewport.
-func getDetailViewportContent(selectedID int, entries []wallabago.Item) (string, error) {
+func getDetailViewportContent(selectedID int, entries []wallabago.Item) string {
 	articleTitle := "Title loading…"
 	content := "Content loading…"
 	if index := getSelectedEntryIndex(entries, selectedID); index >= 0 {
-		var err error
-		content, err = getSelectedEntryContent(entries, index)
-		if err != nil {
-			return "", errors.New("error finding selected entry")
-		}
+		content = getSelectedEntryContent(entries, index)
 		articleTitle = entries[index].Title
 	}
 	text := lipgloss.
@@ -591,7 +643,7 @@ func getDetailViewportContent(selectedID int, entries []wallabago.Item) (string,
 		"\n\n" +
 		content
 
-	return text, nil
+	return text
 }
 
 // Retrieve index of the selected entry in model.Entries
@@ -607,13 +659,10 @@ func getSelectedEntryIndex(entries []wallabago.Item, id int) int {
 }
 
 // Retrieve the article content, in clean and wrap text.
-func getSelectedEntryContent(entries []wallabago.Item, index int) (string, error) {
+func getSelectedEntryContent(entries []wallabago.Item, index int) string {
 	contentHTML := entries[index].Content
-	content, err := html2text.FromString(contentHTML, html2text.Options{PrettyTables: true})
-	if err != nil {
-		return "", errors.New("error retrieving article content")
-	}
-	return wordwrap.String(content, 72), nil
+	content := html2text.HTML2Text(contentHTML)
+	return wordwrap.String(content, 72)
 }
 
 // Manage keybinds changing filters on listView.

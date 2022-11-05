@@ -16,6 +16,7 @@ const currentVersion = "0.0.1"
 const defaultConfigJSON = "~/.config/walgot/walgot.json"
 const defaultCredentialsFile = "~/.config/walgot/credentials.json"
 const defaultLogFile = "/tmp/walgot.log"
+const defaultNbEntriesPerAPICall = 250
 
 // Manage debug flags.
 func handleFlags() (*string, *bool) {
@@ -112,6 +113,11 @@ func main() {
 	}
 
 	walgotConfig.CredentialsFile = credentialsFilePath
+
+	// If NbEntriesPerAPICall is not set:
+	if walgotConfig.NbEntriesPerAPICall <= 0 {
+		walgotConfig.NbEntriesPerAPICall = defaultNbEntriesPerAPICall
+	}
 
 	cmd := cmd.New(walgotConfig)
 	cmd.Run()
