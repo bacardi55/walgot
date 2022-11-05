@@ -84,33 +84,36 @@ example:
 ### Keybinds
 
 ``` 
-	On all screens:
-	- ctrl+c: quit
-	- h: help (this page)
+  On all screens:
+  - ctrl+c: Quit
+  - h: Help (this page)
 
+  On listing page:
+  - r: Reload article from wallabag via APIs, takes time depending on the number of articles saved
+  - u: Toggle display only unread articles (disable archived filter)
+  - s: Toggle display only starred articles
+  - a: Toggle archived only articles (disable unread filter)
+  - A: Toggle Archive / Unread for the current article (and update wallabag backend)
+  - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
+  - h: Display help
+  - ↑ or k / ↓ or j: Move up / down one item in the list
+  - page down / page up: Move up / down 10 items in the list
+  - home: Go to the top of the list
+  - end: Go to bottom of the list
+  - enter: Select entry to read content
+  - q: quit
 
-	On listing page:
-	- r: reload article from wallabag via APIs, takes time depending on the number of articles saved
-	- u: toggle display only unread articles (disable archived filter)
-	- s: toggle display only starred articles
-	- a: toggle archived only articles (disable unread filter)
-	- h: display help
-	- ↑ or k / ↓ or j: move up / down one item in the list
-	- page down / page up: move up / down 10 items in the list
-	- home: go to the top of the list
-	- end: go to bottom of the list
-	- enter: select entry to read content
-	- q: quit
+  On detail page:
+  - A: Toggle Archive / Unread for the current article (and update wallabag backend)
+  - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
+  - q: Return to list
+  - ↑ or k / ↓ or j: Go up / down
 
-	On detail page:
-	- q: return to list
-	- ↑ or k / ↓ or j: go up / down
+  On dialog (modal) view:
+  - "enter" or "esc": Close the dialog
 
-    On dialog (modal) view:
-    - "enter" or "esc": close the dialog
-
-	On help page:
-	- q: return to list
+  On help page:
+  - q: Return to list
 ```
 
 
@@ -128,10 +131,13 @@ MVP:
 - [x] Article detail view
   - [x] Display article in readable format (html2text + wrap)
 - [x] Help view
-- [ ] Action on article
-  - [ ] Archive (mark as read)
-  - [ ] Mark as unread
-  - [ ] Toggle star 
+- [x] Action on article
+  - [x] On listing view
+    - [x] Toggle Archive / Unread
+    - [x] Toggle star 
+  - [x] On detail view
+    - [x] Toggle Archive / Unread
+    - [x] Toggle star 
 - [x] Configurable
   - [x] Load a json configuration file
   - [x] Make configuration file location configurable
@@ -140,18 +146,22 @@ MVP:
 
 After MVP:
 
+- [ ] Add Search
 - [ ] Improve article list view
   - [ ] Sort entries
     - [ ] By date
     - [ ] By title
-- [ ] Add Search
 - [ ] Improve UI
   - [ ] Improve table readability
   - [ ] Improve article view 
 - [ ] Auto create default configuration file
 - [ ] Wizard to create credentials.json ?
-- [ ] Add Configuration option
+- [-] Add Configuration option
+  - [x] Filters when starting
+  - [ ] Sort when starting
 - [x] Display possible API errors in a dialog box
+- [ ] Add reading % in article view
+- [ ] Add entry
 
 To Investigate:
 
@@ -159,7 +169,7 @@ To Investigate:
 - [ ] Manage tags ?
 - [ ] Manage annotations ?
 - [ ] Manage sharing as public link? (Does API even allow this?)
-
+- [ ] STT for reading article?
 
 ## Thank you
 

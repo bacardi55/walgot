@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -95,15 +96,20 @@ func NewModel(config config.WalgotConfig) model {
 // Response message for number of entities from Wallabago
 type wallabagoResponseNbEntitiesMsg int
 
-// Response message for all entities from Wallabago
+// Response message for all entities from Wallabago.
 type wallabagoResponseEntitiesMsg []wallabago.Item
+
+// Response message for entity update.
+type wallabagoResponseEntityUpdateMsg struct {
+	UpdatedEntry wallabago.Item
+}
 
 type wallabagoResponseErrorMsg struct {
 	message        string
 	wallabagoError error
 }
 
-// Selected row in table list Message
+// Selected row in table list Message.
 type walgotSelectRowMsg int
 
 // Callback for requesting the total number of entries via API.
@@ -125,7 +131,6 @@ func requestWallabagNbEntries() tea.Msg {
 func requestWallabagEntries(nbArticles, nbEntriesPerAPICall int) tea.Cmd {
 	return func() tea.Msg {
 		limitArticleByAPICall := nbEntriesPerAPICall
-		log.Println("API call, limit is", limitArticleByAPICall)
 		nbCalls := 1
 		if nbArticles > limitArticleByAPICall {
 			nbCalls = nbArticles / limitArticleByAPICall
@@ -154,6 +159,31 @@ func requestWallabagEntries(nbArticles, nbEntriesPerAPICall int) tea.Cmd {
 	}
 }
 
+// Callback for updating an entry status via API.
+func requestWallabagEntryUpdate(entryID, archive, starred int) tea.Cmd {
+	return func() tea.Msg {
+		// Send PATCH via API:
+		r, err := api.UpdateEntry(entryID, archive, starred)
+		if err != nil {
+			return wallabagoResponseErrorMsg{
+				message:        "Error:\n Couldn't update the selected entry",
+				wallabagoError: err,
+			}
+		}
+
+		var item wallabago.Item
+		err = json.Unmarshal(r, &item)
+		if err != nil {
+			return wallabagoResponseErrorMsg{
+				message:        "Error:\n Response from wallabago is not valid",
+				wallabagoError: err,
+			}
+		}
+
+		return wallabagoResponseEntityUpdateMsg{item}
+	}
+}
+
 // Callback for selecting entry in list:
 func selectEntryCommand(selectedRowID int) tea.Cmd {
 	return func() tea.Msg {
@@ -175,23 +205,33 @@ func (m model) Init() tea.Cmd {
 // Update method.
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.DebugMode {
-		log.Println(fmt.Sprintf("Update message received, type: %T", msg))
-		log.Println("Current view:", m.CurrentView)
+		log.Println(fmt.Sprintf("Update message received, type: %T", msg, m.CurrentView))
 	}
 
 	if msg, ok := msg.(tea.KeyMsg); ok {
 		// C-c to kill the app.
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
-		} else if msg.String() == "?" {
-			log.Println("Display help")
+		} else if msg.String() == "?" && !m.Reloading {
 			m.CurrentView = "help"
 			return m, nil
 		}
 	}
 
-	// This needs to happen before sending to the sub update function.
-	if v, ok := msg.(walgotSelectRowMsg); ok {
+	// Priority: Error > updates > entrySelection:
+	if v, ok := msg.(wallabagoResponseErrorMsg); ok {
+		m.Reloading = false
+		if m.DebugMode {
+			log.Println("Wallabago error:")
+			log.Println(v.wallabagoError)
+		}
+		m.DialogMessage = v.message
+	} else if v, ok := msg.(wallabagoResponseEntityUpdateMsg); ok {
+		// Check for entry update response message,
+		// In this case model needs to be updated:
+		updatedEntryInModel(&m, v.UpdatedEntry)
+	} else if v, ok := msg.(walgotSelectRowMsg); ok {
+		// This needs to happen before sending to the sub update function.
 		m.SelectedID = int(v)
 	}
 
@@ -245,12 +285,22 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			m.Viewport.HalfViewDown()
 		case "k", "up":
 			m.Viewport.HalfViewUp()
-		case "S":
-			log.Println("Star article")
-			// TODO for MVP: Star article.
-		case "A":
-			log.Println("Archived entry")
-			// TODO for MVP: Archive article.
+		case "A", "S":
+			sID := m.SelectedID
+			entry := m.Entries[getSelectedEntryIndex(m.Entries, sID)]
+			a, s := 0, 0
+			if msg.String() == "A" && entry.IsArchived == 0 {
+				a = 1
+				if m.DebugMode {
+					log.Println("Toggle archive on entry", sID)
+				}
+			} else if msg.String() == "S" && entry.IsStarred == 0 {
+				s = 1
+				if m.DebugMode {
+					log.Println("Toggle star on entry", sID)
+				}
+			}
+			return m, requestWallabagEntryUpdate(sID, a, s)
 		}
 	}
 
@@ -293,9 +343,29 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			// Reset number of entries:
 			m.TotalEntriesOnServer = 0
 			return m, requestWallabagNbEntries
+
 		// Filters for the table list:
 		case "u", "s", "a":
 			listViewFiltersUpdate(msg.String(), &m)
+
+		// Update entry status:
+		case "A", "S":
+			sID, _ := strconv.Atoi(m.Table.SelectedRow()[0])
+			entry := m.Entries[getSelectedEntryIndex(m.Entries, sID)]
+			a, s := 0, 0
+			if msg.String() == "A" && entry.IsArchived == 0 {
+				a = 1
+				if m.DebugMode {
+					log.Println("Toggle archive on entry", sID)
+				}
+			} else if msg.String() == "S" && entry.IsStarred == 0 {
+				s = 1
+				if m.DebugMode {
+					log.Println("Toggle star on entry", sID)
+				}
+			}
+			return m, requestWallabagEntryUpdate(sID, a, s)
+
 		}
 
 	// When resizing the window, sizes needs to change everywhere…
@@ -324,16 +394,6 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		}
 		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
 
-	// Manage errors from wallabag APIs (wallabago):
-	case wallabagoResponseErrorMsg:
-		log.Println("Error from wallabago API:", msg.message)
-		m.Reloading = false
-		if m.DebugMode {
-			log.Println("Wallabago error:")
-			log.Println(msg.wallabagoError)
-		}
-		m.DialogMessage = msg.message
-
 	case spinner.TickMsg:
 		// Spin only if it is still displaying the reload screen:
 		if m.Reloading {
@@ -357,6 +417,19 @@ func updateDialogView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+// Manage update message for updated entry via API.
+func updatedEntryInModel(m *model, updatedEntry wallabago.Item) {
+	m.DialogMessage = "Entry (ID: " +
+		strconv.Itoa(updatedEntry.ID) +
+		"):\n« " +
+		lipgloss.NewStyle().Bold(true).Italic(true).Render(updatedEntry.Title) +
+		" »\n\n Has been updated"
+	// The entry in the model needs to be updated to avoid refreshing all via API
+	m.Entries[getSelectedEntryIndex(m.Entries, updatedEntry.ID)] = updatedEntry
+	// Update the table rows so that's it udpated in the list view:
+	m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
 }
 
 // View method.
@@ -442,12 +515,38 @@ func (m model) mainView() string {
 	return listView(m)
 }
 
+// Manage window size changes.
+func windowSizeUpdate(m *model) {
+	h := m.TermSize.Height - lipgloss.Height(m.headerView()) - lipgloss.Height(m.footerView())
+	// Regenerate the table based on new size:
+	t := createViewTable(m.TermSize.Width, h-5)
+	if m.Ready {
+		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+	}
+	m.Table = t
+	// Generate viewport based on screen size
+	contentWidth := 80
+	if m.TermSize.Width < 80 {
+		contentWidth = m.TermSize.Width
+	}
+	v := viewport.New(contentWidth, h-5)
+
+	// We recieved terminal size, we are ready:
+	m.Ready = true
+	// Saving viewport in model:
+	m.Viewport = v
+}
+
+// Manage reloading view.
 func reloadingView(m model) string {
 	text := "Loading all"
 	if m.TotalEntriesOnServer > 0 {
 		text += " " + strconv.Itoa(m.TotalEntriesOnServer)
 	}
 	text += " entries from wallabag…"
+	if m.TotalEntriesOnServer > 250 {
+		text += " (This can take a few moment…)"
+	}
 
 	return lipgloss.NewStyle().
 		Width(m.TermSize.Width).
@@ -458,34 +557,36 @@ func reloadingView(m model) string {
 // Help view.
 func helpView(m model) string {
 	text := []byte(`Help:
-  Keybinds
-	On all screens:
-	- ctrl+c: quit
-	- h: help (this page)
+  On all screens:
+  - ctrl+c: Quit
+  - h: Help (this page)
 
+  On listing page:
+  - r: Reload article from wallabag via APIs, takes time depending on the number of articles saved
+  - u: Toggle display only unread articles (disable archived filter)
+  - s: Toggle display only starred articles
+  - a: Toggle archived only articles (disable unread filter)
+  - A: Toggle Archive / Unread for the current article (and update wallabag backend)
+  - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
+  - h: Display help
+  - ↑ or k / ↓ or j: Move up / down one item in the list
+  - page down / page up: Move up / down 10 items in the list
+  - home: Go to the top of the list
+  - end: Go to bottom of the list
+  - enter: Select entry to read content
+  - q: quit
 
-	On listing page:
-	- r: reload article from wallabag via APIs, takes time depending on the number of articles saved
-	- u: toggle display only unread articles (disable archived filter)
-	- s: toggle display only starred articles
-	- a: toggle archived only articles (disable unread filter)
-	- h: display help
-	- ↑ or k / ↓ or j: move up / down one item in the list
-	- page down / page up: move up / down 10 items in the list
-	- home: go to the top of the list
-	- end: go to bottom of the list
-	- enter: select entry to read content
-	- q: quit
+  On detail page:
+  - A: Toggle Archive / Unread for the current article (and update wallabag backend)
+  - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
+  - q: Return to list
+  - ↑ or k / ↓ or j: Go up / down
 
-	On detail page:
-	- q: return to list
-	- ↑ or k / ↓ or j: go up / down
+  On dialog (modal) view:
+  - "enter" or "esc": Close the dialog
 
-    On dialog (modal) view:
-    - "enter" or "esc": close the dialog
-
-	On help page:
-	- q: return to list
+  On help page:
+  - q: Return to list
 `)
 
 	return lipgloss.
@@ -685,26 +786,4 @@ func listViewFiltersUpdate(msg string, m *model) {
 		}
 	}
 	m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
-}
-
-// Manage window size changes
-func windowSizeUpdate(m *model) {
-	h := m.TermSize.Height - lipgloss.Height(m.headerView()) - lipgloss.Height(m.footerView())
-	// Regenerate the table based on new size:
-	t := createViewTable(m.TermSize.Width, h-5)
-	if m.Ready {
-		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
-	}
-	m.Table = t
-	// Generate viewport based on screen size
-	contentWidth := 80
-	if m.TermSize.Width < 80 {
-		contentWidth = m.TermSize.Width
-	}
-	v := viewport.New(contentWidth, h-5)
-
-	// We recieved terminal size, we are ready:
-	m.Ready = true
-	// Saving viewport in model:
-	m.Viewport = v
 }
