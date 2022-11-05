@@ -11,13 +11,12 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-// TODO: Read from text file to make it easier to update.
+// Default config:
 const currentVersion = "0.0.1"
 const defaultConfigJSON = "~/.config/walgot/walgot.json"
 const defaultCredentialsFile = "~/.config/walgot/credentials.json"
 const defaultLogFile = "/tmp/walgot.log"
 
-// ** Init related method ** /
 // Manage debug flags.
 func handleFlags() (*string, *bool) {
 	var (
@@ -39,7 +38,7 @@ func handleFlags() (*string, *bool) {
 
 // Manage log configuration.
 func configLogs(logFile string) error {
-	log.Println("Setting log file:", logFile)
+	fmt.Println("Setting log file:", logFile)
 	file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		return err
@@ -63,6 +62,7 @@ func main() {
 		}
 		os.Exit(1)
 	}
+
 	// Load walgot configuration from Json file:
 	walgotConfig, err := config.LoadConfig(configFilePath)
 	if err != nil {
@@ -85,14 +85,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Println(walgotConfig.CredentialsFile)
 	// Load credentials file:
 	credentialsFilePath := walgotConfig.CredentialsFile
 	if len(credentialsFilePath) == 0 {
 		log.Println("Empty credentialsFile config, using default", defaultCredentialsFile)
 		walgotConfig.CredentialsFile = defaultCredentialsFile
 	}
-
 	credentialsFilePath, err = homedir.Expand(walgotConfig.CredentialsFile)
 	if err != nil {
 		fmt.Println("Couldn't find credentials file. Check your configuration or use the default place: '~/.config/walgot/credentials.json'")
@@ -101,7 +99,6 @@ func main() {
 		}
 		os.Exit(1)
 	}
-
 	// Check if file exists, otherwise API will fail and that's it:
 	_, err = os.Stat(credentialsFilePath)
 	if err != nil {

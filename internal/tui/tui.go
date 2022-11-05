@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 
 	"git.bacardi55.io/bacardi55/walgot/internal/api"
@@ -77,8 +76,6 @@ func NewModel(config config.WalgotConfig) model {
 		TotalEntriesOnServer: 0,
 		Spinner:              s,
 		DebugMode:            config.DebugMode,
-		// Default start is unread only:
-		// TODO: make this configurable.
 		Options: walgotTableOptions{
 			Filters: walgotTableFilters{
 				Unread:  config.DefaultListViewUnread,
@@ -94,20 +91,24 @@ type wallabagoResponseNbEntitiesMsg int
 // Response message for all entities from Wallabago
 type wallabagoResponseEntitiesMsg []wallabago.Item
 
+type wallabagoResponseErrorMsg struct {
+	message        string
+	wallabagoError error
+}
+
 // Selected row in table list Message
 type walgotSelectRowMsg int
 
 // Callback for requesting the total number of entries via API.
 func requestWallabagNbEntries() tea.Msg {
 	// Get total number of articles:
-	//nbArticles, e := wallabago.GetNumberOfTotalArticles()
 	nbArticles, e := api.GetNbTotalEntries()
 
-	// TODO: move error to a walgotErrorMsg:
 	if e != nil {
-		fmt.Println("Couldn't retrieve entries from wallabag")
-		log.Println("Wallabago error:", e.Error())
-		os.Exit(1)
+		return wallabagoResponseErrorMsg{
+			message:        "couldn't retrieve the total number of entries from wallabag API",
+			wallabagoError: e,
+		}
 	}
 
 	return wallabagoResponseNbEntitiesMsg(nbArticles)
@@ -134,24 +135,12 @@ func requestWallabagEntries(nbArticles int) tea.Cmd {
 		var entries []wallabago.Item
 		for i := 1; i < nbCalls+1; i++ {
 			r, err := api.GetEntries(limitArticleByAPICall, i)
-			/*
-				r, err := wallabago.GetEntries(
-					wallabago.APICall,
-					-1,
-					-1,
-					"updated",
-					"desc",
-					i,
-					limitArticleByAPICall,
-					"",
-				)
-			*/
 
-			// TODO: move to walgotErrorMsg
 			if err != nil {
-				fmt.Println("Couldn't retrieve some entries from wallabag")
-				log.Println("API call number", i)
-				log.Println("Wallabago error:", err.Error())
+				return wallabagoResponseErrorMsg{
+					message:        "couldn't retrieve the entries from wallabag API",
+					wallabagoError: err,
+				}
 			}
 
 			entries = append(entries, r.Embedded.Items...)
@@ -424,6 +413,16 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			log.Println("wallabagoResponseEntityMsg", len(msg))
 		}
 		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+
+	// Manage errors from wallabag APIs (wallabago):
+	case wallabagoResponseErrorMsg:
+		log.Println("Error from wallabago API:", msg.message)
+		// TODO: Print error message in a dialog message?
+		m.Reloading = false
+		if m.DebugMode {
+			log.Println("Wallabago error:")
+			log.Println(msg.wallabagoError)
+		}
 
 	case spinner.TickMsg:
 		// Spin only if it is still displaying the reload screen:

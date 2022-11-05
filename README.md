@@ -80,6 +80,7 @@ After MVP:
 - [ ] Auto create default configuration file
 - [ ] Wizard to create credentials.json ?
 - [ ] Add Configuration option
+- [ ] Display possible API errors in a dialog box
 
 To Investigate:
 
