@@ -2,6 +2,8 @@
 
 **The status of this code is still very early stage and work in progress. This isn't yet at MVP stage so be carreful while using it!**
 
+Official repository and project is on [codeberg](https://codeberg.org/bacardi55/walgot). Github is only a mirror.
+
 ## installation
 
 ### binary
