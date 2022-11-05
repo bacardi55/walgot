@@ -2,24 +2,52 @@
 
 **This app is still very early stage and work in progress, so be careful while using it!**
 
-Official repository and project is on [sourcehut](https://git.sr.ht/~bacardi55/walgot). Github and codeberg are only mirrors.
+[![builds.sr.ht status](https://builds.sr.ht/~bacardi55/walgot.svg)](https://builds.sr.ht/~bacardi55/walgot?)
+[![license: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-informational.svg)](LICENSE)
 
-**Important note**: The way walgot works is by downloading **all** articles from wallabag API at the start of the session (or when using the refresh keybind). Then walgot will allow filtering, viewing or updates (read, star) of articles and push changes via API. There is no local cache or database, so no offline usage (at least for now). 
+Official repository and project is on [sourcehut](https://git.sr.ht/~bacardi55/walgot). Github and codeberg are only mirrors. This is where [binaries are uploaded](https://git.sr.ht/~bacardi55/walgot/refs) (Click on the version to see the files in the release detail page).
+
+## What is walgot?
+
+Walgot is a TUI [wallabag](https://wallabag.org) client. Wallabag is an opensource "read it later" application that can be selfhosted. This application aims to be an easy and interactive TUI client for it.
+
+Walgot is built in [golang](golang.org/), leveraging the great [bubbletea](https://github.com/charmbracelet/bubbletea) library as well as [Wallabago](https://github.com/Strubbl/wallabago), a library to simplify wallabag API calls.
+
+## Online only at this stage
+
+**Important note**: The way walgot works is by downloading **all** articles from wallabag API at the start of the session (or when using the refresh keybind). Then walgot will allow filtering, viewing or updates (read, star) of articles and push changes via API. There is no local cache or database, so no offline usage (at least for now).
+
+Once the initial load is done, internet access is not needed anymore to read articles content. It will be needed for changing article status. An offline mode might be added later, but there are more urgent features to build first :).
 
 ## installation
+
+### dependencies
+
+Requires `go ≥ 1.17` and `make`.
 
 ### binary
 
 Download one of the binary available on the binary file in the release page. 
 Make sure it is executable (with `chmod +x binaryFile`) and then run walgot with the command:
 
-### compile
+### Manual
 Use the makefile provided and run `make build`, it will create a binary file in a `bin` directory.
 
 ``` bash
-git clone https://… # TODO
+git clone https://git.sr.ht/~bacardi55/walgot
 cd walgot
+make dependencies
 make build
+```
+
+
+## configuration
+
+Walgot is configure with 2 different files: `walgot.json` and `credentials.json`. An example of these two files can be found in the `example` directory in the git repository.
+
+To use the default configuration file:
+
+``` bash
 mkdir ~/.config/walgot/
 cp example/*.json ~/.config/walgot/
 # NOTA: Here you need to edit at least ~/.config/walgot/credentials.json
@@ -27,8 +55,7 @@ cp example/*.json ~/.config/walgot/
 ./bin/walgot
 ```
 
-## configuration
-Walgot is configure with 2 different files:
+Don't forget to at least edit the credentials.json file, or it won't work.
 
 ### walgot.json
 
