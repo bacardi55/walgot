@@ -2,7 +2,7 @@
 
 **This app is still very early stage and work in progress, so be careful while using it!**
 
-Official repository and project is on [codeberg](https://codeberg.org/bacardi55/walgot). Github is only a mirror.
+Official repository and project is on [sourcehut](https://git.sr.ht/~bacardi55/walgot). Github and codeberg are only mirrors.
 
 **Important note**: The way walgot works is by downloading **all** articles from wallabag API at the start of the session (or when using the refresh keybind). Then walgot will allow filtering, viewing or updates (read, star) of articles and push changes via API. There is no local cache or database, so no offline usage (at least for now). 
 
