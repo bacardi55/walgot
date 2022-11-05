@@ -1,0 +1,17 @@
+image: alpine/edge
+packages:
+  - go
+  - make
+sources:
+  - https://git.sr.ht/~bacardi55/walgot
+tasks:
+  - setup: |
+      cd walgot
+      make dependencies
+  - build: |
+      cd walgot
+      make build
+triggers:
+  - action: email
+    condition: always
+    to: bac@rdi55.pl
