@@ -1,7 +1,7 @@
 GOCMD := CGO_ENABLED=0 go
 BINARY := walgot
 BINDIR := ./bin
-VERSION := 0.1.1
+VERSION := 0.1.2
 
 GOLDFLAGS := -s -w -X main.Version=$(VERSION)
 
