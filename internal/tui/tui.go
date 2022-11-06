@@ -342,8 +342,10 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			sID, _ := strconv.Atoi(m.Table.SelectedRow()[0])
-			return m, selectEntryCommand(sID)
+			if !m.Reloading {
+				sID, _ := strconv.Atoi(m.Table.SelectedRow()[0])
+				return m, selectEntryCommand(sID)
+			}
 		case "j", "down":
 			m.Table.MoveDown(1)
 		case "pgdown":
