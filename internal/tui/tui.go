@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"git.bacardi55.io/bacardi55/walgot/internal/api"
@@ -637,11 +638,45 @@ func helpView(m model) string {
 
 // Get article detail view.
 func entryDetailView(m model) string {
+	header := entryDetailViewTitle(
+		m.Entries[getSelectedEntryIndex(m.Entries, m.SelectedID)],
+	)
+	footer := entryDetailViewFooter(m.Viewport)
+
 	return lipgloss.
 		NewStyle().
 		Width(m.TermSize.Width).
 		Align(lipgloss.Center).
-		Render(m.Viewport.View())
+		Render(header + "\n" + m.Viewport.View() + "\n" + footer)
+}
+
+// Retrieve title for detail view.
+func entryDetailViewTitle(entry wallabago.Item) string {
+	return lipgloss.
+		NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		Bold(true).
+		Width(80).
+		Align(lipgloss.Left).
+		Render(wordwrap.String(entry.Title, 72))
+}
+
+// Retrieve footer for detail view.
+func entryDetailViewFooter(viewport viewport.Model) string {
+	info := lipgloss.
+		NewStyle().
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderLeft(true).
+		BorderRight(true).
+		Render(fmt.Sprintf("%3.f%%", viewport.ScrollPercent()*100))
+
+	width := viewport.Width - lipgloss.Width(info)
+	if width < 0 {
+		width = 0
+	}
+	line := strings.Repeat("─", width)
+
+	return lipgloss.JoinHorizontal(lipgloss.Center, line, info)
 }
 
 // Get list view.
@@ -775,21 +810,12 @@ func createViewTable(maxWidth int, maxHeight int) table.Model {
 // ** Viewport related functions ** //
 // Generate content for article detail viewport.
 func getDetailViewportContent(selectedID int, entries []wallabago.Item) string {
-	articleTitle := "Title loading…"
-	content := "Content loading…"
+	content := "…"
 	if index := getSelectedEntryIndex(entries, selectedID); index >= 0 {
 		content = getSelectedEntryContent(entries, index)
-		articleTitle = entries[index].Title
 	}
-	text := lipgloss.
-		NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		Bold(true).
-		Render(wordwrap.String(articleTitle, 72)) +
-		"\n\n" +
-		content
 
-	return text
+	return content
 }
 
 // Retrieve index of the selected entry in model.Entries

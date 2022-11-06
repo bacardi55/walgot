@@ -188,10 +188,11 @@ After MVP:
     - [ ] Dynamic Sort table
       - [ ] By date
       - [ ] By title
-  - [ ] Improve article view 
-    - [ ] Add reading % in article view
+  - [x] Improve article view 
+    - [x] Add reading % in article view
+    - [x] Make title static at the top
   - [x] Display possible API errors in a dialog box
-- [ ] Simplify Auto
+- [ ] Simplify start
   - [ ] setup create default configuration file
   - [ ] Wizard to create credentials.json ?
 - [x] Add Configuration option
