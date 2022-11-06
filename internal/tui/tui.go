@@ -498,7 +498,7 @@ func (m model) footerView() string {
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderTop(true).
 		Align(lipgloss.Center).
-		PaddingTop(2).
+		PaddingTop(0).
 		Render(text)
 }
 
@@ -658,12 +658,11 @@ func createViewTableColumns(maxWidth int) []table.Column {
 	baseWidth := int(maxWidth / 20)
 
 	columns := []table.Column{
-		{Title: "ID", Width: baseWidth * 2},
-		{Title: "Title", Width: baseWidth * 10},
+		{Title: "ID", Width: baseWidth},
+		{Title: "Status", Width: baseWidth},
+		{Title: "Title", Width: baseWidth * 12},
 		{Title: "Domain", Width: baseWidth * 4},
-		{Title: "⭐", Width: baseWidth},
-		{Title: "✓", Width: baseWidth},
-		{Title: "Updated date", Width: baseWidth * 2},
+		{Title: "Created", Width: baseWidth * 2},
 	}
 
 	return columns
@@ -675,6 +674,10 @@ func getTableRows(items []wallabago.Item, filters walgotTableFilters) []table.Ro
 
 	for i := 0; i < len(items); i++ {
 		title := items[i].Title
+		id := strconv.Itoa(items[i].ID)
+		domainName := items[i].DomainName
+		status := "  "
+		createdAt := items[i].CreatedAt.Time.Format("2006-02-01")
 
 		if filters.Unread && items[i].IsArchived != 0 {
 			continue
@@ -686,25 +689,29 @@ func getTableRows(items []wallabago.Item, filters walgotTableFilters) []table.Ro
 			continue
 		}
 
-		s := " "
+		archivedEntry := true
+		if items[i].IsArchived == 0 {
+			status = "🆕"
+			archivedEntry = false
+		}
 		if items[i].IsStarred == 1 {
-			s = "⭐"
+			status += "⭐"
+
 		}
 
-		a := " "
-		if items[i].IsArchived == 1 {
-			a = "✓"
-		} else {
-			title = lipgloss.NewStyle().Bold(true).Render(items[i].Title)
+		if archivedEntry {
+			// This create a bug in the selected row,
+			// where it stops the selected style (blue background).
+			// TODO: Create an issue on bubble bugtracker
+			title = lipgloss.NewStyle().Faint(true).Render(title)
 		}
 
 		r = append(r, table.Row{
-			strconv.Itoa(items[i].ID),
+			id,
+			status,
 			title,
-			items[i].DomainName,
-			s,
-			a,
-			items[i].UpdatedAt.Time.Format("2006-02-01"),
+			domainName,
+			createdAt,
 		})
 
 	}
@@ -727,8 +734,7 @@ func createViewTable(maxWidth int, maxHeight int) table.Model {
 		Bold(true)
 	s.Selected = s.Selected.
 		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57")).
-		Bold(false)
+		Background(lipgloss.Color("57"))
 
 	t.SetStyles(s)
 
