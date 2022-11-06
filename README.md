@@ -172,7 +172,6 @@ MVP:
   - [x] Make configuration file location configurable
     - [x] Manage shortpath (eg: "~/")
 
-
 After MVP:
 
 - [ ] Add Search
@@ -191,6 +190,8 @@ After MVP:
 - [x] Display possible API errors in a dialog box
 - [ ] Add reading % in article view
 - [ ] Add entry
+- [ ] Open original article link
+- [ ] Delete article
 
 To Investigate:
 
@@ -199,6 +200,8 @@ To Investigate:
 - [ ] Manage annotations ?
 - [ ] Manage sharing as public link? (Does API even allow this?)
 - [ ] STT for reading article?
+- [ ] Images?
+- [ ] Bulk updates?
 
 ## Thank you
 
