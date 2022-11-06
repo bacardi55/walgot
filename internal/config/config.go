@@ -14,6 +14,8 @@ type WalgotConfig struct {
 	DebugMode              bool
 	LogFile                string
 	NbEntriesPerAPICall    int
+	DefaultSorting         string
+	DefaultOrder           string
 }
 
 // LoadConfig will read a given configJSON file and parses the result, returning a parsed config object

@@ -13,13 +13,13 @@ func InitWallabagoAPI(credentialsFile string) error {
 }
 
 // GetEntries returns entries from wallabag APIs.
-func GetEntries(itemsPerPage int, pageNumber int) (wallabago.Entries, error) {
+func GetEntries(itemsPerPage, pageNumber int, sortField, sortOrder string) (wallabago.Entries, error) {
 	return wallabago.GetEntries(
 		wallabago.APICall,
 		-1,
 		-1,
-		"updated",
-		"desc",
+		sortField,
+		sortOrder,
 		pageNumber,
 		itemsPerPage,
 		"",

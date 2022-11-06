@@ -30,21 +30,22 @@ type termSize struct {
 	Height int
 }
 
+// TableView filter options
 type walgotTableFilters struct {
 	Archived bool
 	Starred  bool
 	Unread   bool
 }
 
-/*
-   // TODO: allow sorting result.
+// TableView Sort options
 type walgotTableSorts struct {
+	Field string
+	Order string
 }
-*/
 
 type walgotTableOptions struct {
 	Filters walgotTableFilters
-	//Sorts walgotTableSorts
+	Sorts   walgotTableSorts
 }
 
 // Model structure
@@ -92,6 +93,10 @@ func NewModel(config config.WalgotConfig) model {
 				Unread:  config.DefaultListViewUnread,
 				Starred: config.DefaultListViewStarred,
 			},
+			Sorts: walgotTableSorts{
+				Field: "created",
+				Order: "desc",
+			},
 		},
 	}
 }
@@ -134,7 +139,7 @@ func requestWallabagNbEntries() tea.Msg {
 }
 
 // Callback for requesting entries via API.
-func requestWallabagEntries(nbArticles, nbEntriesPerAPICall int) tea.Cmd {
+func requestWallabagEntries(nbArticles, nbEntriesPerAPICall int, sortField, sortOrder string) tea.Cmd {
 	return func() tea.Msg {
 		limitArticleByAPICall := nbEntriesPerAPICall
 		nbCalls := 1
@@ -149,7 +154,7 @@ func requestWallabagEntries(nbArticles, nbEntriesPerAPICall int) tea.Cmd {
 		// Might not be a good idea with the ELM architecture?
 		var entries []wallabago.Item
 		for i := 1; i < nbCalls+1; i++ {
-			r, err := api.GetEntries(limitArticleByAPICall, i)
+			r, err := api.GetEntries(limitArticleByAPICall, i, sortField, sortOrder)
 
 			if err != nil {
 				return wallabagoResponseErrorMsg{
@@ -377,7 +382,12 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		// We now have the number of entries, we can trigger
 		// the process to retrieve all these entries
 		return m, tea.Batch(
-			requestWallabagEntries(m.TotalEntriesOnServer, m.NbEntriesPerAPICall),
+			requestWallabagEntries(
+				m.TotalEntriesOnServer,
+				m.NbEntriesPerAPICall,
+				m.Options.Sorts.Field,
+				m.Options.Sorts.Order,
+			),
 			m.Spinner.Tick,
 		)
 
@@ -738,7 +748,7 @@ func getDetailViewportContent(selectedID int, entries []wallabago.Item) string {
 		NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		Bold(true).
-		Render(articleTitle) +
+		Render(wordwrap.String(articleTitle, 72)) +
 		"\n\n" +
 		content
 
