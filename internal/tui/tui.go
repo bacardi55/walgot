@@ -311,6 +311,20 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			}
 			m.UpdateMessage = action
 			return m, requestWallabagEntryUpdate(sID, a, s)
+		case "O":
+			entry := m.Entries[getSelectedEntryIndex(m.Entries, m.SelectedID)]
+			if err := openLinkInBrowser(entry.URL); err != nil {
+				m.DialogMessage = "Couldn't open link in browser"
+				if m.DebugMode {
+					log.Println("Error while opening in browser")
+					log.Println(err)
+				}
+				return m, nil
+			}
+			m.UpdateMessage = "Link opened in browser"
+			return m, tea.Tick(time.Second*3, func(t time.Time) tea.Msg {
+				return wallabagoResponseClearMsg(true)
+			})
 		}
 	}
 
@@ -368,6 +382,21 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			m.UpdateMessage = action
 			return m, requestWallabagEntryUpdate(sID, a, s)
 
+		case "O":
+			sID, _ := strconv.Atoi(m.Table.SelectedRow()[0])
+			entry := m.Entries[getSelectedEntryIndex(m.Entries, sID)]
+			if err := openLinkInBrowser(entry.URL); err != nil {
+				m.DialogMessage = "Couldn't open link in browser"
+				if m.DebugMode {
+					log.Println("Error while opening in browser")
+					log.Println(err)
+				}
+				return m, nil
+			}
+			m.UpdateMessage = "Link opened in browser"
+			return m, tea.Tick(time.Second*3, func(t time.Time) tea.Msg {
+				return wallabagoResponseClearMsg(true)
+			})
 		}
 
 	// When resizing the window, sizes needs to change everywhere…
@@ -576,6 +605,7 @@ func helpView(m model) string {
   - a: Toggle archived only articles (disable unread filter)
   - A: Toggle Archive / Unread for the current article (and update wallabag backend)
   - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
+  - O: Open article link url in default browser
   - h: Display help
   - ↑ or k / ↓ or j: Move up / down one item in the list
   - page down / page up: Move up / down 10 items in the list
@@ -587,6 +617,7 @@ func helpView(m model) string {
   On detail page:
   - A: Toggle Archive / Unread for the current article (and update wallabag backend)
   - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
+  - O: Open article link url in default browser
   - q: Return to list
   - ↑ or k / ↓ or j: Go up / down
 

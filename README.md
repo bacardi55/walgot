@@ -129,6 +129,7 @@ example:
   - a: Toggle archived only articles (disable unread filter)
   - A: Toggle Archive / Unread for the current article (and update wallabag backend)
   - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
+  - O: Open article link url in default browser
   - h: Display help
   - ↑ or k / ↓ or j: Move up / down one item in the list
   - page down / page up: Move up / down 10 items in the list
@@ -140,6 +141,7 @@ example:
   On detail page:
   - A: Toggle Archive / Unread for the current article (and update wallabag backend)
   - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
+  - O: Open article link url in default browser
   - q: Return to list
   - ↑ or k / ↓ or j: Go up / down
 
@@ -181,8 +183,8 @@ After MVP:
 
 - [ ] Add Search
 - [ ] Improve UI
-  - [ ] Improve article list view
-    - [ ] Improve table readability
+  - [-] Improve article list view
+    - [x] Improve table readability
     - [ ] Dynamic Sort table
       - [ ] By date
       - [ ] By title
@@ -196,7 +198,7 @@ After MVP:
   - [x] Filters when starting
   - [x] Sort when starting
 - [ ] Add entry
-- [ ] Open original article link
+- [x] Open original article link
 - [ ] Delete article
 
 To Investigate:
