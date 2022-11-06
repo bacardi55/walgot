@@ -68,11 +68,16 @@ The main configuration file, in json format. The default value are as below:
     "DefaultListViewStarred": false,
     "DebugMode": true,
     "LogFile": "/tmp/walgot.log",
-    "NbEntriesPerAPICall": 255
+    "NbEntriesPerAPICall": 255,
+    "DefaultSorting": "created",
+    "DefaultOrder": "desc"
 }
 ```
 
 You only need to set the value you want to change in your configuration file, not everything.
+
+- DefaultSorting: can only be 'created', 'updated' or 'archived', default 'created'
+- DefaultOrder: can only be 'desc' or 'asc', default 'desc'
 
 ### credentials.json
 
@@ -175,27 +180,28 @@ MVP:
 After MVP:
 
 - [ ] Add Search
-- [ ] Improve article list view
-  - [ ] Sort entries
-    - [ ] By date
-    - [ ] By title
 - [ ] Improve UI
-  - [ ] Improve table readability
+  - [ ] Improve article list view
+    - [ ] Improve table readability
+    - [ ] Dynamic Sort table
+      - [ ] By date
+      - [ ] By title
   - [ ] Improve article view 
-- [ ] Auto create default configuration file
-- [ ] Wizard to create credentials.json ?
-- [-] Add Configuration option
+    - [ ] Add reading % in article view
+  - [x] Display possible API errors in a dialog box
+- [ ] Simplify Auto
+  - [ ] setup create default configuration file
+  - [ ] Wizard to create credentials.json ?
+- [x] Add Configuration option
   - [x] Filters when starting
-  - [ ] Sort when starting
-- [x] Display possible API errors in a dialog box
-- [ ] Add reading % in article view
+  - [x] Sort when starting
 - [ ] Add entry
 - [ ] Open original article link
 - [ ] Delete article
-- [ ] Add a CLI parameter for "cleaning wallabag" (= remove archived and unstarred articles older than X) → This will make the API faster.
 
 To Investigate:
 
+- [ ] Add a CLI parameter for "cleaning wallabag" (= remove archived and unstarred articles older than X) → This will make the API faster. Or should it be a different program?
 - [ ] Offline? Local cache?
 - [ ] Manage tags ?
 - [ ] Manage annotations ?
