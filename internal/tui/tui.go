@@ -789,19 +789,24 @@ func listViewFiltersUpdate(msg string, m *model) {
 // Retrieve updates variable.
 func sendEntryUpdate(msg string, sID int, m *model) (int, int, string) {
 	entry := m.Entries[getSelectedEntryIndex(m.Entries, sID)]
-	action := "Marking entry as "
-	a, s := 0, 0
+	action := "Toggled entry status: "
+	a := entry.IsArchived
+	s := entry.IsStarred
 	if msg == "A" {
-		action = "read"
 		if entry.IsArchived == 0 {
 			action = "archive"
 			a = 1
+		} else {
+			action = "read"
+			a = 0
 		}
 	} else if msg == "S" {
-		action = "unstarred"
 		if entry.IsStarred == 0 {
 			action = "starred"
 			s = 1
+		} else {
+			action = "unstarred"
+			s = 0
 		}
 	}
 
