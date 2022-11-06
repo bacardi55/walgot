@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	"git.bacardi55.io/bacardi55/walgot/internal/api"
 	"git.bacardi55.io/bacardi55/walgot/internal/config"
@@ -36,6 +37,7 @@ type walgotTableFilters struct {
 }
 
 /*
+   // TODO: allow sorting result.
 type walgotTableSorts struct {
 }
 */
@@ -52,6 +54,7 @@ type model struct {
 	Viewport      viewport.Model
 	DialogMessage string
 	Spinner       spinner.Model
+	UpdateMessage string
 	// Tui Status related
 	Ready       bool
 	Reloading   bool
@@ -103,6 +106,9 @@ type wallabagoResponseEntitiesMsg []wallabago.Item
 type wallabagoResponseEntityUpdateMsg struct {
 	UpdatedEntry wallabago.Item
 }
+
+// After update message has been displayed enough time.
+type wallabagoResponseClearMsg bool
 
 type wallabagoResponseErrorMsg struct {
 	message        string
@@ -227,9 +233,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.DialogMessage = v.message
 	} else if v, ok := msg.(wallabagoResponseEntityUpdateMsg); ok {
-		// Check for entry update response message,
-		// In this case model needs to be updated:
+		// If received an entry update response message,
+		// the model needs to be updated with refreshed entry:
 		updatedEntryInModel(&m, v.UpdatedEntry)
+		// To remove the update message after 3 seconds:
+		return m, tea.Tick(time.Second*3, func(t time.Time) tea.Msg {
+			return wallabagoResponseClearMsg(true)
+		})
+	} else if v, ok := msg.(wallabagoResponseClearMsg); ok && bool(v) {
+		// Clear update message
+		m.UpdateMessage = ""
 	} else if v, ok := msg.(walgotSelectRowMsg); ok {
 		// This needs to happen before sending to the sub update function.
 		m.SelectedID = int(v)
@@ -287,19 +300,11 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			m.Viewport.HalfViewUp()
 		case "A", "S":
 			sID := m.SelectedID
-			entry := m.Entries[getSelectedEntryIndex(m.Entries, sID)]
-			a, s := 0, 0
-			if msg.String() == "A" && entry.IsArchived == 0 {
-				a = 1
-				if m.DebugMode {
-					log.Println("Toggle archive on entry", sID)
-				}
-			} else if msg.String() == "S" && entry.IsStarred == 0 {
-				s = 1
-				if m.DebugMode {
-					log.Println("Toggle star on entry", sID)
-				}
+			a, s, action := sendEntryUpdate(msg.String(), m.SelectedID, &m)
+			if m.DebugMode {
+				log.Println("Update entry action:", action, a, s)
 			}
+			m.UpdateMessage = action
 			return m, requestWallabagEntryUpdate(sID, a, s)
 		}
 	}
@@ -351,19 +356,11 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		// Update entry status:
 		case "A", "S":
 			sID, _ := strconv.Atoi(m.Table.SelectedRow()[0])
-			entry := m.Entries[getSelectedEntryIndex(m.Entries, sID)]
-			a, s := 0, 0
-			if msg.String() == "A" && entry.IsArchived == 0 {
-				a = 1
-				if m.DebugMode {
-					log.Println("Toggle archive on entry", sID)
-				}
-			} else if msg.String() == "S" && entry.IsStarred == 0 {
-				s = 1
-				if m.DebugMode {
-					log.Println("Toggle star on entry", sID)
-				}
+			a, s, action := sendEntryUpdate(msg.String(), sID, &m)
+			if m.DebugMode {
+				log.Println("Update entry action:", action, a, s)
 			}
+			m.UpdateMessage = action
 			return m, requestWallabagEntryUpdate(sID, a, s)
 
 		}
@@ -421,11 +418,8 @@ func updateDialogView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 
 // Manage update message for updated entry via API.
 func updatedEntryInModel(m *model, updatedEntry wallabago.Item) {
-	m.DialogMessage = "Entry (ID: " +
-		strconv.Itoa(updatedEntry.ID) +
-		"):\n« " +
-		lipgloss.NewStyle().Bold(true).Italic(true).Render(updatedEntry.Title) +
-		" »\n\n Has been updated"
+	// Add a message update. No need for a popup here.
+	m.UpdateMessage = "Entry has been updated"
 	// The entry in the model needs to be updated to avoid refreshing all via API
 	m.Entries[getSelectedEntryIndex(m.Entries, updatedEntry.ID)] = updatedEntry
 	// Update the table rows so that's it udpated in the list view:
@@ -468,6 +462,7 @@ func (m model) headerView() string {
 		lipgloss.NewStyle().Bold(true).Render("Walgot"),
 		lipgloss.NewStyle().Render(subtitle),
 	)
+
 	return titleStyle.Render(t)
 }
 
@@ -475,13 +470,16 @@ func (m model) headerView() string {
 func (m model) footerView() string {
 	var text string
 
-	if !m.Reloading {
+	if len(m.UpdateMessage) > 0 {
+		text += lipgloss.NewStyle().Italic(true).Render(m.UpdateMessage)
+	} else if !m.Reloading {
 		text += lipgloss.
 			NewStyle().
 			Bold(true).
 			Render(strconv.Itoa(m.TotalEntriesOnServer))
 		text += " articles loaded from wallabag"
 	}
+
 	text += "\n[r]eload -- Toggles: [u]nread, [s]tarred, [a]rchived -- [h]elp"
 
 	return lipgloss.
@@ -786,4 +784,26 @@ func listViewFiltersUpdate(msg string, m *model) {
 		}
 	}
 	m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+}
+
+// Retrieve updates variable.
+func sendEntryUpdate(msg string, sID int, m *model) (int, int, string) {
+	entry := m.Entries[getSelectedEntryIndex(m.Entries, sID)]
+	action := "Marking entry as "
+	a, s := 0, 0
+	if msg == "A" {
+		action = "read"
+		if entry.IsArchived == 0 {
+			action = "archive"
+			a = 1
+		}
+	} else if msg == "S" {
+		action = "unstarred"
+		if entry.IsStarred == 0 {
+			action = "starred"
+			s = 1
+		}
+	}
+
+	return a, s, action
 }
