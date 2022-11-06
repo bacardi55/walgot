@@ -192,6 +192,7 @@ After MVP:
 - [ ] Add entry
 - [ ] Open original article link
 - [ ] Delete article
+- [ ] Add a CLI parameter for "cleaning wallabag" (= remove archived and unstarred articles older than X) → This will make the API faster.
 
 To Investigate:
 
