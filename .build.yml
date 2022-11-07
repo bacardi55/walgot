@@ -10,7 +10,12 @@ tasks:
       make dependencies
   - build: |
       cd walgot
-      make build
+      make buildAll
+artifacts:
+  - walgot/bin/walgot_linux_amd64
+  - walgot/bin/walgot_linux_arm
+  - walgot/bin/walgot_linux_arm64
+  - walgot/bin/walgot_linux_386
 triggers:
   - action: email
     condition: always
