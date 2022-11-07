@@ -4,5 +4,7 @@
     "DefaultListViewStarred": false,
     "DebugMode": false,
     "LogFile": "/tmp/walgot.log",
-    "NbEntriesPerAPICall": 255
+    "NbEntriesPerAPICall": 255,
+    "DefaultSorting": "created",
+    "DefaultOrder": "desc"
 }
