@@ -46,7 +46,7 @@ Don't forget to at least edit the `credentials.json` file, or it won't work.
 
 ### walgot.json
 
-The main configuration file, in json format. See the [default example](example/walgot.json) for all configuration options.
+The main configuration file, in json format. See the [default example](/example/walgot.json) for all configuration options.
 
 You only need to set the value you want to change in your configuration file, not everything.
 
@@ -56,7 +56,7 @@ You only need to set the value you want to change in your configuration file, no
 
 ### credentials.json
 
-In the `walgot.json` file above, we indicate the path to the credentials file for connecting to Wallabag. See the [default example](example/credentials.json) for all options.
+In the `walgot.json` file above, we indicate the path to the credentials file for connecting to Wallabag. See the [default example](/example/credentials.json) for all options.
 
 Default place is `~/.config/walgot/credentials.json` but can be changed in the `walgot.json` file.
 
