@@ -37,9 +37,9 @@ func getConfig(configJSON string) (config WalgotConfig, err error) {
 	return
 }
 
+// readJSON parses a byte stream into a Walgot Config object
 // Stolen from Wallabago code:
 // https://github.com/Strubbl/wallabago/blob/master/config.go#L49
-// readJSON parses a byte stream into a Walgot Config object
 func readJSON(raw []byte) (config WalgotConfig, err error) {
 	// trim BOM bytes that make the JSON parser crash
 	raw = bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf"))
