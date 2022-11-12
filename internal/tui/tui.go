@@ -212,7 +212,7 @@ func (m model) Init() tea.Cmd {
 // Update method.
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.DebugMode {
-		log.Println(fmt.Sprintf("Update message received, type: %T", msg, m.CurrentView))
+		log.Println(fmt.Sprintf("Update message received, type: %T", msg), m.CurrentView)
 	}
 
 	if msg, ok := msg.(tea.KeyMsg); ok {
