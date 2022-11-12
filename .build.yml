@@ -5,6 +5,9 @@ packages:
 sources:
   - https://git.sr.ht/~bacardi55/walgot
 tasks:
+  - test: |
+      cd walgot
+      go test ./...
   - setup: |
       cd walgot
       make dependencies
