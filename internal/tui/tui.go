@@ -138,13 +138,7 @@ func requestWallabagNbEntries() tea.Msg {
 func requestWallabagEntries(nbArticles, nbEntriesPerAPICall int, sortField, sortOrder string) tea.Cmd {
 	return func() tea.Msg {
 		limitArticleByAPICall := nbEntriesPerAPICall
-		nbCalls := 1
-		if nbArticles > limitArticleByAPICall {
-			nbCalls = nbArticles / limitArticleByAPICall
-			if float64(nbCalls) < float64(nbArticles)/float64(limitArticleByAPICall) {
-				nbCalls++
-			}
-		}
+		nbCalls := getRequiredNbAPICalls(nbArticles, limitArticleByAPICall)
 
 		// TODO: Move this to async channel?
 		// Might not be a good idea with the ELM architecture?

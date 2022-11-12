@@ -50,3 +50,22 @@ func getSelectedEntryContent(entries []wallabago.Item, index int) string {
 	content := html2text.HTML2Text(contentHTML)
 	return wordwrap.String(content, 72)
 }
+
+// Calculate the number of API call needed to retrieve all articles.
+func getRequiredNbAPICalls(nbArticles, limitArticleByAPICall int) int {
+	if nbArticles <= 0 {
+		return 0
+	}
+	if limitArticleByAPICall <= 0 {
+		limitArticleByAPICall = nbArticles
+	}
+
+	nbCalls := 1
+	if nbArticles > limitArticleByAPICall {
+		nbCalls = nbArticles / limitArticleByAPICall
+		if float64(nbCalls) < float64(nbArticles)/float64(limitArticleByAPICall) {
+			nbCalls++
+		}
+	}
+	return nbCalls
+}
