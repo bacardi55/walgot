@@ -30,12 +30,15 @@ After MVP:
 - [ ] Improve UI
   - [-] Improve article list view
     - [x] Improve table readability
+    - [ ] Adapt table to screen size? (hide columns)
     - [ ] Dynamic Sort table
       - [ ] By date
       - [ ] By title
   - [x] Improve article view
     - [x] Add reading % in article view
     - [x] Make title static at the top
+    - [ ] Better management for links to avoid breaking
+    - [ ] Better management for images url
   - [x] Display possible API errors in a dialog box
 - [ ] Simplify start
   - [ ] setup create default configuration file
@@ -44,14 +47,13 @@ After MVP:
   - [x] Filters when starting
   - [x] Sort when starting
 - [ ] Add entry
-- [x] Open original article link
 - [ ] Delete article
+- [x] Open public/original article link
 - [x] Manage sharing as public link
 - [ ] Yank/Copy URL
 
 To Investigate:
 
-- [ ] Add a CLI parameter for "cleaning wallabag" (= remove archived and unstarred articles older than X) → This will make the API faster. Or should it be a different program?
 - [ ] Offline? Local cache?
 - [ ] Manage tags ?
 - [ ] Manage annotations ?
