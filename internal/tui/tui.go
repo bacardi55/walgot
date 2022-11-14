@@ -161,10 +161,10 @@ func requestWallabagEntries(nbArticles, nbEntriesPerAPICall int, sortField, sort
 }
 
 // Callback for updating an entry status via API.
-func requestWallabagEntryUpdate(entryID, archive, starred int) tea.Cmd {
+func requestWallabagEntryUpdate(entryID, archive, starred, public int) tea.Cmd {
 	return func() tea.Msg {
 		// Send PATCH via API:
-		r, err := api.UpdateEntry(entryID, archive, starred)
+		r, err := api.UpdateEntry(entryID, archive, starred, public)
 		if err != nil {
 			return wallabagoResponseErrorMsg{
 				message:        "Error:\n Couldn't update the selected entry",

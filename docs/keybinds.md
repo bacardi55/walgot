@@ -14,7 +14,8 @@ All available keybinds:
   - a: Toggle archived only articles (disable unread filter)
   - A: Toggle Archive / Unread for the current article (and update wallabag backend)
   - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
-  - O: Open article link url in default browser
+  - P: Toggle Public status - Public means article can be shared with a public link
+  - O: Open article public link url in default browser. If article isn't public, it will open the original article link.
   - h: Display help
   - ↑ or k / ↓ or j: Move up / down one item in the list
   - page down / page up: Move up / down 10 items in the list
@@ -26,7 +27,8 @@ All available keybinds:
   On detail page:
   - A: Toggle Archive / Unread for the current article (and update wallabag backend)
   - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
-  - O: Open article link url in default browser
+  - P: Toggle Public status - Public means article can be shared with a public link
+  - O: Open article public link url in default browser. If article isn't public, it will open the original article link.
   - q: Return to list
   - ↑ or k / ↓ or j: Go up / down
 

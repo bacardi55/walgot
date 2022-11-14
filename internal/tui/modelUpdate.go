@@ -56,14 +56,19 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		case "alt+[F":
 			m.Viewport.GotoBottom()
 
-		case "A", "S":
+		case "A", "S", "P":
 			sID := m.SelectedID
-			a, s, action := sendEntryUpdate(msg.String(), m.SelectedID, &m)
+			a, s, p, action := sendEntryUpdate(msg.String(), m.SelectedID, &m)
 			if m.DebugMode {
 				log.Println("Update entry action:", action, a, s)
 			}
 			m.UpdateMessage = action
-			return m, requestWallabagEntryUpdate(sID, a, s)
+			return m, requestWallabagEntryUpdate(
+				sID,
+				a,
+				s,
+				p,
+			)
 		case "O":
 			entry := m.Entries[getSelectedEntryIndex(m.Entries, m.SelectedID)]
 			if err := openLinkInBrowser(entry.URL); err != nil {
@@ -128,19 +133,31 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			listViewFiltersUpdate(msg.String(), &m)
 
 		// Update entry status:
-		case "A", "S":
+		case "A", "S", "P":
 			sID, _ := strconv.Atoi(m.Table.SelectedRow()[0])
-			a, s, action := sendEntryUpdate(msg.String(), sID, &m)
+			a, s, p, action := sendEntryUpdate(msg.String(), sID, &m)
 			if m.DebugMode {
 				log.Println("Update entry action:", action, a, s)
 			}
 			m.UpdateMessage = action
-			return m, requestWallabagEntryUpdate(sID, a, s)
+			return m, requestWallabagEntryUpdate(
+				sID,
+				a,
+				s,
+				p,
+			)
 
+		// Open in default browser:
 		case "O":
 			sID, _ := strconv.Atoi(m.Table.SelectedRow()[0])
 			entry := m.Entries[getSelectedEntryIndex(m.Entries, sID)]
-			if err := openLinkInBrowser(entry.URL); err != nil {
+			url := entry.URL
+			// If entry is public, open the public link:
+			if entry.IsPublic {
+				url = wallabago.Config.WallabagURL + "/share/" + entry.UID
+			}
+
+			if err := openLinkInBrowser(url); err != nil {
 				m.DialogMessage = "Couldn't open link in browser"
 				if m.DebugMode {
 					log.Println("Error while opening in browser")
@@ -243,11 +260,16 @@ func listViewFiltersUpdate(msg string, m *model) {
 }
 
 // Retrieve updates variable.
-func sendEntryUpdate(msg string, sID int, m *model) (int, int, string) {
+func sendEntryUpdate(msg string, sID int, m *model) (int, int, int, string) {
 	entry := m.Entries[getSelectedEntryIndex(m.Entries, sID)]
 	action := "Toggled entry status: "
 	a := entry.IsArchived
 	s := entry.IsStarred
+	p := 0
+	if entry.IsPublic {
+		p = 1
+	}
+
 	if msg == "A" {
 		if entry.IsArchived == 0 {
 			action = "archive"
@@ -264,7 +286,15 @@ func sendEntryUpdate(msg string, sID int, m *model) (int, int, string) {
 			action = "unstarred"
 			s = 0
 		}
+	} else if msg == "P" {
+		if !entry.IsPublic {
+			action = "publish"
+			p = 1
+		} else {
+			action = "unpublish"
+			p = 0
+		}
 	}
 
-	return a, s, action
+	return a, s, p, action
 }
