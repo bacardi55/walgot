@@ -79,3 +79,9 @@ example:
 ``` bash
 /path/to/walgot -d -config "/my/config/file.json"
 ```
+
+### Status explanation
+
+- ⭐: Starred article
+- 🆕: Unread article
+- 🔗: Article with a public shareable link

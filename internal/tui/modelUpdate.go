@@ -129,7 +129,7 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			return m, requestWallabagNbEntries
 
 		// Filters for the table list:
-		case "u", "s", "a":
+		case "u", "s", "a", "p":
 			listViewFiltersUpdate(msg.String(), &m)
 
 		// Update entry status:
@@ -245,17 +245,18 @@ func listViewFiltersUpdate(msg string, m *model) {
 		if m.Options.Filters.Unread {
 			m.Options.Filters.Archived = false
 		}
-	}
-	if msg == "s" {
-		m.Options.Filters.Starred = !m.Options.Filters.Starred
-	}
-	if msg == "a" {
+	} else if msg == "a" {
 		m.Options.Filters.Archived = !m.Options.Filters.Archived
 		// Unread and Archived can't be selected at the same time:
 		if m.Options.Filters.Archived {
 			m.Options.Filters.Unread = false
 		}
+	} else if msg == "s" {
+		m.Options.Filters.Starred = !m.Options.Filters.Starred
+	} else if msg == "p" {
+		m.Options.Filters.Public = !m.Options.Filters.Public
 	}
+
 	m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
 }
 

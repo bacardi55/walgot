@@ -2,6 +2,7 @@
     "CredentialsFile": "~/.config/walgot/credentials.json",
     "DefaultListViewUnread": true,
     "DefaultListViewStarred": false,
+    "DefaultListViewPublic": false,
     "DebugMode": false,
     "LogFile": "/tmp/walgot.log",
     "NbEntriesPerAPICall": 255,

@@ -12,6 +12,7 @@ All available keybinds:
   - u: Toggle display only unread articles (disable archived filter)
   - s: Toggle display only starred articles
   - a: Toggle archived only articles (disable unread filter)
+  - p: Toggle public only articles (articles with a public link)
   - A: Toggle Archive / Unread for the current article (and update wallabag backend)
   - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
   - P: Toggle Public status - Public means article can be shared with a public link

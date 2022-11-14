@@ -11,6 +11,7 @@ type WalgotConfig struct {
 	CredentialsFile        string
 	DefaultListViewUnread  bool
 	DefaultListViewStarred bool
+	DefaultListViewPublic  bool
 	DebugMode              bool
 	LogFile                string
 	NbEntriesPerAPICall    int

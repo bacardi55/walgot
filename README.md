@@ -1,7 +1,5 @@
 # Walgot - a WALlabag GO Tui client
 
-**This app is still very early stage and work in progress, so be careful while using it!**
-
 [![builds.sr.ht status](https://builds.sr.ht/~bacardi55/walgot.svg)](https://builds.sr.ht/~bacardi55/walgot?)
 [![license: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-informational.svg)](LICENSE)
 

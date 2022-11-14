@@ -31,6 +31,7 @@ type walgotTableFilters struct {
 	Archived bool
 	Starred  bool
 	Unread   bool
+	Public   bool
 }
 
 // TableView Sort options
@@ -88,6 +89,7 @@ func NewModel(config config.WalgotConfig) model {
 			Filters: walgotTableFilters{
 				Unread:  config.DefaultListViewUnread,
 				Starred: config.DefaultListViewStarred,
+				Public:  config.DefaultListViewPublic,
 			},
 			Sorts: walgotTableSorts{
 				Field: "created",

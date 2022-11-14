@@ -15,10 +15,10 @@ MVP:
 - [x] Action on article
   - [x] On listing view
     - [x] Toggle Archive / Unread
-    - [x] Toggle star 
+    - [x] Toggle star
   - [x] On detail view
     - [x] Toggle Archive / Unread
-    - [x] Toggle star 
+    - [x] Toggle star
 - [x] Configurable
   - [x] Load a json configuration file
   - [x] Make configuration file location configurable
@@ -33,7 +33,7 @@ After MVP:
     - [ ] Dynamic Sort table
       - [ ] By date
       - [ ] By title
-  - [x] Improve article view 
+  - [x] Improve article view
     - [x] Add reading % in article view
     - [x] Make title static at the top
   - [x] Display possible API errors in a dialog box
@@ -46,6 +46,8 @@ After MVP:
 - [ ] Add entry
 - [x] Open original article link
 - [ ] Delete article
+- [x] Manage sharing as public link
+- [ ] Yank/Copy URL
 
 To Investigate:
 
@@ -53,7 +55,6 @@ To Investigate:
 - [ ] Offline? Local cache?
 - [ ] Manage tags ?
 - [ ] Manage annotations ?
-- [ ] Manage sharing as public link? (Does API even allow this?)
 - [ ] STT for reading article?
 - [ ] Images?
 - [ ] Bulk updates?
