@@ -15,7 +15,7 @@ func updateHelpView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q":
+		case "q", "esc":
 			m.CurrentView = "list"
 		}
 	}
@@ -42,10 +42,8 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			// Make sure to scrollback up for other articles:
 			m.Viewport.GotoTop()
 		case "j", "down":
-			//m.Viewport.HalfViewDown()
 			m.Viewport.LineDown(1)
 		case "k", "up":
-			//m.Viewport.HalfViewUp()
 			m.Viewport.LineUp(1)
 		case "pagedown":
 			m.Viewport.HalfViewDown()
@@ -56,6 +54,7 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		case "alt+[F":
 			m.Viewport.GotoBottom()
 
+		// Update article (archive, starred, public):
 		case "A", "S", "P":
 			sID := m.SelectedID
 			a, s, p, action := sendEntryUpdate(msg.String(), m.SelectedID, &m)
@@ -69,10 +68,12 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 				s,
 				p,
 			)
+
+		// Open entries in browser:
 		case "O":
 			entry := m.Entries[getSelectedEntryIndex(m.Entries, m.SelectedID)]
 			if err := openLinkInBrowser(entry.URL); err != nil {
-				m.DialogMessage = "Couldn't open link in browser"
+				m.Dialog.Message = "Couldn't open link in browser"
 				if m.DebugMode {
 					log.Println("Error while opening in browser")
 					log.Println(err)
@@ -116,6 +117,12 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		case "alt+[F":
 			m.Table.GotoBottom()
 		case "q":
+			// If search active, clean it and don't quit:
+			if m.Options.Filters.Search != "" {
+				return m, func() tea.Msg {
+					return walgotSearchEntryMsg("")
+				}
+			}
 			return m, tea.Quit
 		case "r":
 			// If already reloading, do nothing
@@ -158,7 +165,7 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			}
 
 			if err := openLinkInBrowser(url); err != nil {
-				m.DialogMessage = "Couldn't open link in browser"
+				m.Dialog.Message = "Couldn't open link in browser"
 				if m.DebugMode {
 					log.Println("Error while opening in browser")
 					log.Println(err)
@@ -169,6 +176,34 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			return m, tea.Tick(time.Second*3, func(t time.Time) tea.Msg {
 				return wallabagoResponseClearMsg(true)
 			})
+
+		// Search:
+		case "/":
+			if m.Reloading {
+				return m, nil
+			}
+			// Configure textinput:
+			m.Dialog.TextInput.Placeholder = "Search"
+			m.Dialog.TextInput.CharLimit = 55
+			// Display textinput
+			m.Dialog.ShowInput = true
+			// Add search button:
+			m.Dialog.Action = "search"
+			// Dialog title:
+			m.Dialog.Message = "Filter by article's title:\n"
+			// Set current view to dialog:
+			m.CurrentView = "dialog"
+
+		// Clean, if needed:
+		case "esc":
+			if m.Options.Filters.Search != "" {
+				// Cleaning a search.
+				m.Options.Filters.Search = ""
+				// Table needs to be refreshed:
+				return m, func() tea.Msg {
+					return walgotSearchEntryMsg("")
+				}
+			}
 		}
 
 	// When resizing the window, sizes needs to change everywhere…
@@ -202,6 +237,12 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		}
 		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
 
+	// Search request:
+	case walgotSearchEntryMsg:
+		m.Options.Filters.Search = string(msg)
+		// Recalculate table rows:
+		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+
 	case spinner.TickMsg:
 		// Spin only if it is still displaying the reload screen:
 		if m.Reloading {
@@ -214,17 +255,46 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 }
 
 // Manage update messages for dialog view.
-func updateDialogView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+func updateDialogView(msg tea.Msg, m *model) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "enter", "esc":
-			// Validates dialog, so close it by resetting message:
-			m.DialogMessage = ""
+		case "esc":
+			// Close and reset dialog box:
+			m.Dialog.Message = ""
+			m.Dialog.ShowInput = false
+			m.Dialog.Action = ""
+			m.Dialog.TextInput.Blur()
+			// Search input is not resetted though, just in case.
+			return m, nil
+
+		case "enter":
+			if m.Dialog.Action == "search" {
+				// Start search, value needs to be copied.
+				s := m.Dialog.TextInput.Value()
+				cmds = append(cmds, func() tea.Msg {
+					return walgotSearchEntryMsg(s)
+				})
+			}
+			// Cleaning dialog box:
+			m.Dialog.Message = ""
+			m.Dialog.ShowInput = false
+			m.Dialog.Action = ""
+			m.Dialog.TextInput.Blur()
+			m.Dialog.TextInput.Reset()
+			// Next screen should be on filtered list:
+			m.CurrentView = "list"
 		}
 	}
 
-	return m, nil
+	m.Dialog.TextInput.Focus()
+	var cmd tea.Cmd
+	m.Dialog.TextInput, cmd = m.Dialog.TextInput.Update(msg)
+	cmds = append(cmds, cmd)
+
+	return m, tea.Batch(cmds...)
 }
 
 // Manage update message for updated entry via API.

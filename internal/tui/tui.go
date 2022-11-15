@@ -13,6 +13,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -32,6 +33,7 @@ type walgotTableFilters struct {
 	Starred  bool
 	Unread   bool
 	Public   bool
+	Search   string
 }
 
 // TableView Sort options
@@ -40,9 +42,24 @@ type walgotTableSorts struct {
 	Order string
 }
 
+// TableView options
 type walgotTableOptions struct {
 	Filters walgotTableFilters
 	Sorts   walgotTableSorts
+}
+
+// Dialog Box:
+type walgotDialog struct {
+	Message   string
+	TextInput textinput.Model
+	ShowInput bool
+	Action    string
+}
+
+// Walgot error message:
+type wallabagoResponseErrorMsg struct {
+	message        string
+	wallabagoError error
 }
 
 // Model structure
@@ -50,7 +67,7 @@ type model struct {
 	// Sub models related:
 	Table         table.Model
 	Viewport      viewport.Model
-	DialogMessage string
+	Dialog        walgotDialog
 	Spinner       spinner.Model
 	UpdateMessage string
 	// Tui Status related
@@ -85,6 +102,12 @@ func NewModel(config config.WalgotConfig) model {
 		Spinner:              s,
 		NbEntriesPerAPICall:  config.NbEntriesPerAPICall,
 		DebugMode:            config.DebugMode,
+		Dialog: walgotDialog{
+			Message:   "",
+			ShowInput: false,
+			TextInput: textinput.New(),
+			Action:    "",
+		},
 		Options: walgotTableOptions{
 			Filters: walgotTableFilters{
 				Unread:  config.DefaultListViewUnread,
@@ -113,13 +136,11 @@ type wallabagoResponseEntityUpdateMsg struct {
 // After update message has been displayed enough time.
 type wallabagoResponseClearMsg bool
 
-type wallabagoResponseErrorMsg struct {
-	message        string
-	wallabagoError error
-}
-
 // Selected row in table list Message.
 type walgotSelectRowMsg int
+
+// Search for an entry message.
+type walgotSearchEntryMsg string
 
 // Callback for requesting the total number of entries via API.
 func requestWallabagNbEntries() tea.Msg {
@@ -228,7 +249,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			log.Println("Wallabago error:")
 			log.Println(v.wallabagoError)
 		}
-		m.DialogMessage = v.message
+		m.Dialog.Message = v.message
 	} else if v, ok := msg.(wallabagoResponseEntityUpdateMsg); ok {
 		// If received an entry update response message,
 		// the model needs to be updated with refreshed entry:
@@ -246,8 +267,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Priority order: dialog > help > detail > list.
-	if m.DialogMessage != "" {
-		return updateDialogView(msg, m)
+	if m.Dialog.Message != "" {
+		return updateDialogView(msg, &m)
 	} else if m.CurrentView == "help" {
 		return updateHelpView(msg, m)
 	}

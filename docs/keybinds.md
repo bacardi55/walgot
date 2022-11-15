@@ -17,13 +17,15 @@ All available keybinds:
   - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
   - P: Toggle Public status - Public means article can be shared with a public link
   - O: Open article public link url in default browser. If article isn't public, it will open the original article link.
+  - /: Open search box
+  - esc: Clean search filter, if any
   - h: Display help
   - ↑ or k / ↓ or j: Move up / down one item in the list
   - page down / page up: Move up / down 10 items in the list
   - home: Go to the top of the list
   - end: Go to bottom of the list
   - enter: Select entry to read content
-  - q: quit
+  - q: Remove search filter if any, otherwise quit
 
   On detail page:
   - A: Toggle Archive / Unread for the current article (and update wallabag backend)
@@ -33,9 +35,12 @@ All available keybinds:
   - q: Return to list
   - ↑ or k / ↓ or j: Go up / down
 
-  On dialog (modal) view:
-  - "enter" or "esc": Close the dialog
+  On any dialog (modal) view:
+  - "esc": Close the dialog
+
+  On search modal view:
+  - "enter": start search
 
   On help page:
-  - q: Return to list
+  - q, esc: Return to list
 ```

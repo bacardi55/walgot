@@ -23,6 +23,9 @@ func (m model) headerView() string {
 
 	subtitle := ""
 	if !m.Reloading && m.Ready {
+		if m.Options.Filters.Search != "" {
+			subtitle += " - Searching for " + m.Options.Filters.Search
+		}
 		if m.Options.Filters.Unread {
 			subtitle += " - Unread"
 		}
@@ -86,8 +89,8 @@ func (m model) mainView() string {
 	}
 
 	// Priority: dialog > help > detail > list.
-	if m.DialogMessage != "" {
-		return dialogView(m)
+	if m.Dialog.Message != "" {
+		return dialogView(&m)
 	} else if m.CurrentView == "help" {
 		return helpView(m)
 	} else if m.SelectedID > 0 {
@@ -152,13 +155,15 @@ func helpView(m model) string {
   - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
   - P: Toggle Public status - Public means article can be shared with a public link
   - O: Open article public link url in default browser. If article isn't public, it will open the original article link.
+  - /: Open search box
+  - esc: Clean search filter, if any
   - h: Display help
   - ↑ or k / ↓ or j: Move up / down one item in the list
   - page down / page up: Move up / down 10 items in the list
   - home: Go to the top of the list
   - end: Go to bottom of the list
   - enter: Select entry to read content
-  - q: quit
+  - q: Remove search filter if any, otherwise quit
 
   On detail page:
   - A: Toggle Archive / Unread for the current article (and update wallabag backend)
@@ -168,11 +173,15 @@ func helpView(m model) string {
   - q: Return to list
   - ↑ or k / ↓ or j: Go up / down
 
-  On dialog (modal) view:
-  - "enter" or "esc": Close the dialog
+  On any dialog (modal) view:
+  - "esc": Close the dialog
+
+  On search modal view:
+  - "enter": start search
+
 
   On help page:
-  - q: Return to list
+  - q, esc: Return to list
 
   Status explanation:
   - ⭐ Starred article
@@ -236,7 +245,7 @@ func listView(m model) string {
 }
 
 // Get dialog view.
-func dialogView(m model) string {
+func dialogView(m *model) string {
 	dialogBoxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("#874BFD")).
@@ -246,21 +255,50 @@ func dialogView(m model) string {
 		BorderRight(true).
 		BorderBottom(true)
 
-	okButton := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFF7DB")).
-		Background(lipgloss.Color("#888B7E")).
+	actionButton := ""
+	if m.Dialog.Action == "search" {
+		actionButton = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFF7DB")).
+			Background(lipgloss.Color("#888B7E")).
+			Padding(0, 3).
+			MarginTop(1).
+			Underline(true).
+			Render("Search (enter)")
+	}
+
+	closeButton := lipgloss.NewStyle().
+		Background(lipgloss.Color("#FFF7DB")).
+		Foreground(lipgloss.Color("#888B7E")).
 		Padding(0, 3).
 		MarginTop(1).
 		Underline(true).
-		Render("Ok")
+		Render("Close (esc)")
 
-	question := lipgloss.
+	buttons := lipgloss.JoinHorizontal(
+		lipgloss.Center,
+		actionButton,
+		closeButton,
+	)
+
+	content := lipgloss.
 		NewStyle().
 		Width(50).
-		Align(lipgloss.Center).
-		Render(m.DialogMessage)
+		Align(lipgloss.Left).
+		Render(m.Dialog.Message)
 
-	ui := lipgloss.JoinVertical(lipgloss.Center, question, okButton)
+	if m.Dialog.ShowInput {
+		m.Dialog.TextInput.PromptStyle = lipgloss.
+			NewStyle().
+			Foreground(lipgloss.Color("205")).
+			Align(lipgloss.Left)
+		content = lipgloss.JoinVertical(
+			lipgloss.Left,
+			content,
+			m.Dialog.TextInput.View(),
+		)
+	}
+
+	ui := lipgloss.JoinVertical(lipgloss.Center, content, buttons)
 
 	return lipgloss.
 		NewStyle().
@@ -286,6 +324,7 @@ func createViewTableColumns(maxWidth int) []table.Column {
 }
 
 // Create rows
+// TODO: create test for this function.
 func getTableRows(items []wallabago.Item, filters walgotTableFilters) []table.Row {
 	r := []table.Row{}
 
@@ -296,17 +335,24 @@ func getTableRows(items []wallabago.Item, filters walgotTableFilters) []table.Ro
 		status := "  "
 		createdAt := items[i].CreatedAt.Time.Format("2006-02-01")
 
+		// Public filter:
 		if filters.Public && !items[i].IsPublic {
 			continue
 		}
-
+		// Unread filter:
 		if filters.Unread && items[i].IsArchived != 0 {
 			continue
 		}
+		// Archived filter:
+		if filters.Archived && items[i].IsArchived != 1 {
+			continue
+		}
+		// Starred filter:
 		if filters.Starred && items[i].IsStarred != 1 {
 			continue
 		}
-		if filters.Archived && items[i].IsArchived != 1 {
+		// Search filter:
+		if filters.Search != "" && !containsI(items[i].Title, filters.Search) {
 			continue
 		}
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/Strubbl/wallabago/v7"
 	"github.com/k3a/html2text"
@@ -68,4 +69,12 @@ func getRequiredNbAPICalls(nbArticles, limitArticleByAPICall int) int {
 		}
 	}
 	return nbCalls
+}
+
+// Case insensitive strings.Contains:
+func containsI(s, t string) bool {
+	return strings.Contains(
+		strings.ToLower(s),
+		strings.ToLower(t),
+	)
 }
