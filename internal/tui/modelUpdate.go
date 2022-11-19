@@ -303,6 +303,11 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			m.Entries = append(m.Entries[:index], m.Entries[index+1:]...)
 		}
 		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+		// Letting user know:
+		m.UpdateMessage = "Entry has been deleted successfully"
+		return m, tea.Tick(time.Second*5, func(t time.Time) tea.Msg {
+			return wallabagoResponseClearMsg(true)
+		})
 
 	// Search request:
 	case walgotSearchEntryMsg:
