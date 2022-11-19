@@ -3,6 +3,7 @@ package tui
 import (
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Strubbl/wallabago/v7"
@@ -194,6 +195,23 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			// Set current view to dialog:
 			m.CurrentView = "dialog"
 
+		// Add an entry:
+		case "N":
+			if m.Reloading {
+				return m, nil
+			}
+			// Configure textinput:
+			m.Dialog.TextInput.Placeholder = "URL"
+			m.Dialog.TextInput.CharLimit = 0
+			// Display textinput
+			m.Dialog.ShowInput = true
+			// Add search button:
+			m.Dialog.Action = "add"
+			// Dialog title:
+			m.Dialog.Message = "Add a URL to wallabag:\n"
+			// Set current view to dialog:
+			m.CurrentView = "dialog"
+
 		// Clean, if needed:
 		case "esc":
 			if m.Options.Filters.Search != "" {
@@ -237,6 +255,20 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		}
 		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
 
+	// Added entry response:
+	case wallabagoResponseAddEntryMsg:
+		// Wallabag API send a 200 even if the URL isn't good.
+		// Unfortunately, it means checking the content of the entry…
+		m.Entries = append([]wallabago.Item{msg.Entry}, m.Entries...)
+		// Recalculate table rows:
+		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+		if strings.Contains(
+			msg.Entry.Content,
+			"wallabag can't retrieve contents for this article",
+		) {
+			m.Dialog.Message = "Wallabag couldn't retrieve content, empty entry created."
+		}
+
 	// Search request:
 	case walgotSearchEntryMsg:
 		m.Options.Filters.Search = string(msg)
@@ -271,13 +303,8 @@ func updateDialogView(msg tea.Msg, m *model) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "enter":
-			if m.Dialog.Action == "search" {
-				// Start search, value needs to be copied.
-				s := m.Dialog.TextInput.Value()
-				cmds = append(cmds, func() tea.Msg {
-					return walgotSearchEntryMsg(s)
-				})
-			}
+			input := m.Dialog.TextInput.Value()
+			action := m.Dialog.Action
 			// Cleaning dialog box:
 			m.Dialog.Message = ""
 			m.Dialog.ShowInput = false
@@ -286,6 +313,17 @@ func updateDialogView(msg tea.Msg, m *model) (tea.Model, tea.Cmd) {
 			m.Dialog.TextInput.Reset()
 			// Next screen should be on filtered list:
 			m.CurrentView = "list"
+
+			// Per action command:
+			if action == "search" {
+				// Start search, value needs to be copied.
+				cmds = append(cmds, func() tea.Msg {
+					return walgotSearchEntryMsg(input)
+				})
+			} else if action == "add" {
+				// Save entry:
+				return m, requestWallabagAddEntry(input)
+			}
 		}
 	}
 

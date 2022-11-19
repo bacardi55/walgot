@@ -156,6 +156,7 @@ func helpView(m model) string {
   - P: Toggle Public status - Public means article can be shared with a public link
   - O: Open article public link url in default browser. If article isn't public, it will open the original article link.
   - /: Open search box
+  - N: Add a new url to wallabag.
   - esc: Clean search filter, if any
   - h: Display help
   - ↑ or k / ↓ or j: Move up / down one item in the list
@@ -256,14 +257,15 @@ func dialogView(m *model) string {
 		BorderBottom(true)
 
 	actionButton := ""
-	if m.Dialog.Action == "search" {
+	if m.Dialog.Action == "search" || m.Dialog.Action == "add" {
+		text := strings.Title(m.Dialog.Action) + " (Enter)"
 		actionButton = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFF7DB")).
 			Background(lipgloss.Color("#888B7E")).
 			Padding(0, 3).
 			MarginTop(1).
 			Underline(true).
-			Render("Search (enter)")
+			Render(text)
 	}
 
 	closeButton := lipgloss.NewStyle().

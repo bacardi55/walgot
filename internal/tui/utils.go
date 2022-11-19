@@ -2,6 +2,7 @@ package tui
 
 import (
 	"errors"
+	"net/url"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -77,4 +78,12 @@ func containsI(s, t string) bool {
 		strings.ToLower(s),
 		strings.ToLower(t),
 	)
+}
+
+// Validate is the given string is a URL format.
+func isValidURL(u string) bool {
+	if _, err := url.ParseRequestURI(u); err != nil {
+		return false
+	}
+	return true
 }

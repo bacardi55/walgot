@@ -47,3 +47,27 @@ func UpdateEntry(entryID, archive, starred, public int) ([]byte, error) {
 		body,
 	)
 }
+
+// AddEntry add an entry on wallabag.
+func AddEntry(url string) (wallabago.Item, error) {
+	postData := map[string]string{
+		"url": url,
+	}
+	postDataJSON, err := json.Marshal(postData)
+	if err != nil {
+		return wallabago.Item{}, err
+	}
+	entriesURL := wallabago.Config.WallabagURL + "/api/entries.json"
+	body, err := wallabago.APICall(entriesURL, "POST", postDataJSON)
+	if err != nil {
+		return wallabago.Item{}, err
+	}
+
+	var item wallabago.Item
+	err = json.Unmarshal(body, &item)
+	if err != nil {
+		return wallabago.Item{}, err
+	}
+
+	return item, nil
+}

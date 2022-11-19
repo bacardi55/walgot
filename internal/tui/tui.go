@@ -2,6 +2,7 @@ package tui
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -136,6 +137,11 @@ type wallabagoResponseEntityUpdateMsg struct {
 // After update message has been displayed enough time.
 type wallabagoResponseClearMsg bool
 
+// Add entry message.
+type wallabagoResponseAddEntryMsg struct {
+	Entry wallabago.Item
+}
+
 // Selected row in table list Message.
 type walgotSelectRowMsg int
 
@@ -205,6 +211,29 @@ func requestWallabagEntryUpdate(entryID, archive, starred, public int) tea.Cmd {
 		}
 
 		return wallabagoResponseEntityUpdateMsg{item}
+	}
+}
+
+// Callback for adding an entry via API.
+func requestWallabagAddEntry(url string) tea.Cmd {
+	return func() tea.Msg {
+		if !isValidURL(url) {
+			return wallabagoResponseErrorMsg{
+				message:        "Error:\n Invalid URL",
+				wallabagoError: errors.New("invalid URL given"),
+			}
+		}
+		r, err := api.AddEntry(url)
+		if err != nil {
+			return wallabagoResponseErrorMsg{
+				message:        "Error:\n Couldn't add the entry",
+				wallabagoError: err,
+			}
+		}
+
+		return wallabagoResponseAddEntryMsg{
+			Entry: r,
+		}
 	}
 }
 

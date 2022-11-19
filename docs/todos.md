@@ -26,7 +26,7 @@ MVP:
 
 After MVP:
 
-- [ ] Add Search
+- [x] Add Search
 - [ ] Improve UI
   - [-] Improve article list view
     - [x] Improve table readability
@@ -34,6 +34,7 @@ After MVP:
     - [ ] Dynamic Sort table
       - [ ] By date
       - [ ] By title
+    - [ ] Add status in title for easier readability (and update when keybind)
   - [x] Improve article view
     - [x] Add reading % in article view
     - [x] Make title static at the top
@@ -46,11 +47,13 @@ After MVP:
 - [x] Add Configuration option
   - [x] Filters when starting
   - [x] Sort when starting
-- [ ] Add entry
+- [x] Add entry
 - [ ] Delete article
 - [x] Open public/original article link
 - [x] Manage sharing as public link
 - [ ] Yank/Copy URL
+- [ ] Option to mark entry as read as soon as you read it 
+
 
 To Investigate:
 

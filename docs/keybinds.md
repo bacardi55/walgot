@@ -18,6 +18,7 @@ All available keybinds:
   - P: Toggle Public status - Public means article can be shared with a public link
   - O: Open article public link url in default browser. If article isn't public, it will open the original article link.
   - /: Open search box
+  - N: Add a new url to wallabag.
   - esc: Clean search filter, if any
   - h: Display help
   - ↑ or k / ↓ or j: Move up / down one item in the list
