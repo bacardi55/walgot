@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
 
 	"github.com/Strubbl/wallabago/v7"
@@ -70,4 +71,22 @@ func AddEntry(url string) (wallabago.Item, error) {
 	}
 
 	return item, nil
+}
+
+// DeleteEntry removes an entry from wallabag.
+func DeleteEntry(id int) error {
+	url := wallabago.Config.WallabagURL +
+		"/api/entries/" +
+		strconv.Itoa(id)
+
+	response, err := wallabago.APICall(
+		url,
+		"DELETE",
+		[]byte{},
+	)
+	if err != nil {
+		return errors.New("Couldn't delete entry:" + strconv.Itoa(id))
+	}
+
+	return nil
 }

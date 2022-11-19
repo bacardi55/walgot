@@ -85,6 +85,13 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			return m, tea.Tick(time.Second*3, func(t time.Time) tea.Msg {
 				return wallabagoResponseClearMsg(true)
 			})
+
+		// Delete:
+		case "D":
+			sID := m.SelectedID
+			m.SelectedID = 0
+			m.CurrentView = "list"
+			return m, requestWallabagEntryDelete(sID)
 		}
 	}
 
@@ -178,6 +185,14 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 				return wallabagoResponseClearMsg(true)
 			})
 
+		// Delete:
+		case "D":
+			if m.Reloading {
+				return m, nil
+			}
+			sID, _ := strconv.Atoi(m.Table.SelectedRow()[0])
+			return m, requestWallabagEntryDelete(sID)
+
 		// Search:
 		case "/":
 			if m.Reloading {
@@ -257,17 +272,31 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 
 	// Added entry response:
 	case wallabagoResponseAddEntryMsg:
-		// Wallabag API send a 200 even if the URL isn't good.
-		// Unfortunately, it means checking the content of the entry…
+		// Add new entry at the top.
 		m.Entries = append([]wallabago.Item{msg.Entry}, m.Entries...)
 		// Recalculate table rows:
 		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+		// Wallabag API send a 200 even if the URL isn't good.
+		// Unfortunately, it means checking the content of the entry…
 		if strings.Contains(
 			msg.Entry.Content,
 			"wallabag can't retrieve contents for this article",
 		) {
 			m.Dialog.Message = "Wallabag couldn't retrieve content, empty entry created."
 		}
+
+	// Deleted entry response:
+	case wallabagoResponseDeleteEntryMsg:
+		// Remove deleted entry from model:
+		index := getSelectedEntryIndex(m.Entries, int(msg))
+		if index == 0 {
+			m.Entries = m.Entries[1:]
+		} else if index == len(m.Entries)-1 {
+			m.Entries = m.Entries[:len(m.Entries)-2]
+		} else {
+			m.Entries = append(m.Entries[:index], m.Entries[index+1:]...)
+		}
+		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
 
 	// Search request:
 	case walgotSearchEntryMsg:

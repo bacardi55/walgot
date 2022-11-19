@@ -48,7 +48,7 @@ After MVP:
   - [x] Filters when starting
   - [x] Sort when starting
 - [x] Add entry
-- [ ] Delete article
+- [x] Delete article
 - [x] Open public/original article link
 - [x] Manage sharing as public link
 - [ ] Yank/Copy URL

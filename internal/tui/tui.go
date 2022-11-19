@@ -142,6 +142,9 @@ type wallabagoResponseAddEntryMsg struct {
 	Entry wallabago.Item
 }
 
+// Delete entry message.
+type wallabagoResponseDeleteEntryMsg int
+
 // Selected row in table list Message.
 type walgotSelectRowMsg int
 
@@ -237,6 +240,21 @@ func requestWallabagAddEntry(url string) tea.Cmd {
 	}
 }
 
+// Callback for deleting an entry via API.
+func requestWallabagEntryDelete(id int) tea.Cmd {
+	return func() tea.Msg {
+		err := api.DeleteEntry(id)
+		if err != nil {
+			return wallabagoResponseErrorMsg{
+				message:        "Error:\n Couldn't add the entry",
+				wallabagoError: err,
+			}
+		}
+
+		return wallabagoResponseDeleteEntryMsg(id)
+	}
+}
+
 // Callback for selecting entry in list:
 func selectEntryCommand(selectedRowID int) tea.Cmd {
 	return func() tea.Msg {
@@ -284,7 +302,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// the model needs to be updated with refreshed entry:
 		updatedEntryInModel(&m, v.UpdatedEntry)
 		// To remove the update message after 3 seconds:
-		return m, tea.Tick(time.Second*3, func(t time.Time) tea.Msg {
+		return m, tea.Tick(time.Second*5, func(t time.Time) tea.Msg {
 			return wallabagoResponseClearMsg(true)
 		})
 	} else if v, ok := msg.(wallabagoResponseClearMsg); ok && bool(v) {
