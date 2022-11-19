@@ -54,10 +54,16 @@ func getSelectedEntryIndex(entries []wallabago.Item, id int) int {
 }
 
 // Retrieve the article content, in clean and wrap text.
-func getSelectedEntryContent(entries []wallabago.Item, index int) string {
+func getSelectedEntryContent(entries []wallabago.Item, index, maxWidth int) string {
 	contentHTML := entries[index].Content
 	content := html2text.HTML2Text(contentHTML)
-	return wordwrap.String(content, 72)
+
+	w := 72
+	if maxWidth < w {
+		w = maxWidth - 2
+	}
+
+	return wordwrap.String(content, w)
 }
 
 // Calculate the number of API call needed to retrieve all articles.

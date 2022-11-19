@@ -32,7 +32,7 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 	// A row has been selected, display article detail:
 	case walgotSelectRowMsg:
 		m.CurrentView = "detail"
-		m.Viewport.SetContent(getDetailViewportContent(m.SelectedID, m.Entries))
+		m.Viewport.SetContent(getDetailViewportContent(m.SelectedID, m.Entries, m.TermSize.Width))
 
 	case tea.KeyMsg:
 		switch msg.String() {

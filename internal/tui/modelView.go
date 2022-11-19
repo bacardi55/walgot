@@ -209,7 +209,7 @@ func helpView(m model) string {
 // Get article detail view.
 func entryDetailView(m model) string {
 	i := getSelectedEntryIndex(m.Entries, m.SelectedID)
-	header := entryDetailViewTitle(&m.Entries[i])
+	header := entryDetailViewTitle(&m.Entries[i], m.TermSize.Width)
 	footer := entryDetailViewFooter(m.Viewport, &m.Entries[i])
 
 	return lipgloss.
@@ -220,13 +220,17 @@ func entryDetailView(m model) string {
 }
 
 // Retrieve title for detail view.
-func entryDetailViewTitle(entry *wallabago.Item) string {
+func entryDetailViewTitle(entry *wallabago.Item, maxWidth int) string {
+	w := 80
+	if maxWidth < 80 {
+		w = maxWidth - 4
+	}
 	title := lipgloss.
 		NewStyle().
 		Bold(true).
-		Width(80).
+		Width(w).
 		Align(lipgloss.Center).
-		Render(wordwrap.String(entry.Title, 72))
+		Render(wordwrap.String(entry.Title, w-8))
 
 	return lipgloss.
 		NewStyle().
@@ -476,10 +480,10 @@ func createViewTable(maxWidth int, maxHeight int) table.Model {
 
 // ** Viewport related functions ** //
 // Generate content for article detail viewport.
-func getDetailViewportContent(selectedID int, entries []wallabago.Item) string {
+func getDetailViewportContent(selectedID int, entries []wallabago.Item, maxWidth int) string {
 	content := "…"
 	if index := getSelectedEntryIndex(entries, selectedID); index >= 0 {
-		content = getSelectedEntryContent(entries, index)
+		content = getSelectedEntryContent(entries, index, maxWidth)
 	}
 
 	return content

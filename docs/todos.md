@@ -30,7 +30,7 @@ After MVP:
 - [ ] Improve UI
   - [-] Improve article list view
     - [x] Improve table readability
-    - [x] Adapt table to screen size? (hide columns)
+    - [x] Adapt table to screen size
     - [ ] Dynamic Sort table
       - [ ] By date
       - [ ] By title
@@ -40,6 +40,7 @@ After MVP:
     - [x] Make title static at the top
     - [ ] Better management for links to avoid breaking
     - [ ] Better management for images url
+    - [x] Adapt reading view to screen size
   - [x] Display possible API errors in a dialog box
 - [ ] Simplify start
   - [ ] setup create default configuration file
