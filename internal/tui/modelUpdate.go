@@ -283,6 +283,12 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			"wallabag can't retrieve contents for this article",
 		) {
 			m.Dialog.Message = "Wallabag couldn't retrieve content, empty entry created."
+		} else {
+			// Letting user know:
+			m.UpdateMessage = "Entry has been added successfully"
+			return m, tea.Tick(time.Second*5, func(t time.Time) tea.Msg {
+				return wallabagoResponseClearMsg(true)
+			})
 		}
 
 	// Deleted entry response:

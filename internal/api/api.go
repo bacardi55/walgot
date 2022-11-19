@@ -79,7 +79,7 @@ func DeleteEntry(id int) error {
 		"/api/entries/" +
 		strconv.Itoa(id)
 
-	response, err := wallabago.APICall(
+	_, err := wallabago.APICall(
 		url,
 		"DELETE",
 		[]byte{},
