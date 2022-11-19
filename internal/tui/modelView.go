@@ -22,7 +22,13 @@ func (m model) headerView() string {
 		Align(lipgloss.Center)
 
 	subtitle := ""
-	if !m.Reloading && m.Ready {
+	if !m.Ready {
+		subtitle += " - Loading…"
+	} else if m.Reloading {
+		subtitle += " - Reloading"
+	} else if m.SelectedID > 0 {
+		subtitle += " - Reading"
+	} else {
 		if m.Options.Filters.Search != "" {
 			subtitle += " - Searching for " + m.Options.Filters.Search
 		}
@@ -38,10 +44,9 @@ func (m model) headerView() string {
 		if m.Options.Filters.Public {
 			subtitle += " - Public"
 		}
-	}
-
-	if len(subtitle) == 0 && !m.Reloading {
-		subtitle = " - All"
+		if len(subtitle) == 0 && !m.Reloading {
+			subtitle = " - All"
+		}
 	}
 
 	t := lipgloss.JoinHorizontal(lipgloss.Center,
@@ -201,10 +206,9 @@ func helpView(m model) string {
 
 // Get article detail view.
 func entryDetailView(m model) string {
-	header := entryDetailViewTitle(
-		m.Entries[getSelectedEntryIndex(m.Entries, m.SelectedID)],
-	)
-	footer := entryDetailViewFooter(m.Viewport)
+	i := getSelectedEntryIndex(m.Entries, m.SelectedID)
+	header := entryDetailViewTitle(&m.Entries[i])
+	footer := entryDetailViewFooter(m.Viewport, &m.Entries[i])
 
 	return lipgloss.
 		NewStyle().
@@ -214,32 +218,54 @@ func entryDetailView(m model) string {
 }
 
 // Retrieve title for detail view.
-func entryDetailViewTitle(entry wallabago.Item) string {
+func entryDetailViewTitle(entry *wallabago.Item) string {
+	title := lipgloss.
+		NewStyle().
+		Bold(true).
+		Width(80).
+		Align(lipgloss.Center).
+		Render(wordwrap.String(entry.Title, 72))
+
 	return lipgloss.
 		NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
-		Bold(true).
-		Width(80).
-		Align(lipgloss.Left).
-		Render(wordwrap.String(entry.Title, 72))
+		Render(title)
 }
 
 // Retrieve footer for detail view.
-func entryDetailViewFooter(viewport viewport.Model) string {
-	info := lipgloss.
+func entryDetailViewFooter(viewport viewport.Model, entry *wallabago.Item) string {
+	status := ""
+	if entry.IsArchived == 0 {
+		status += "🆕"
+	}
+	if entry.IsStarred == 1 {
+		status += "⭐"
+	}
+	if entry.IsPublic {
+		status += "🔗"
+	}
+
+	statusInfo := lipgloss.
+		NewStyle().
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderLeft(true).
+		BorderRight(true).
+		Render(fmt.Sprintf("%s", status))
+
+	readInfo := lipgloss.
 		NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderLeft(true).
 		BorderRight(true).
 		Render(fmt.Sprintf("%3.f%%", viewport.ScrollPercent()*100))
 
-	width := viewport.Width - lipgloss.Width(info)
+	width := viewport.Width - lipgloss.Width(readInfo) - lipgloss.Width(statusInfo)
 	if width < 0 {
 		width = 0
 	}
 	line := strings.Repeat("─", width)
 
-	return lipgloss.JoinHorizontal(lipgloss.Center, line, info)
+	return lipgloss.JoinHorizontal(lipgloss.Center, statusInfo, line, readInfo)
 }
 
 // Get list view.
