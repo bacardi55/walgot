@@ -17,6 +17,7 @@ All available keybinds:
   - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
   - P: Toggle Public status - Public means article can be shared with a public link
   - O: Open article public link url in default browser. If article isn't public, it will open the original article link.
+  - Y: Yank (copy) URL to clipboard. If article isn't public, it will open the original article link.
   - /: Open search box
   - N: Add a new url to wallabag.
   - D: Delete the selected entry.
@@ -34,6 +35,7 @@ All available keybinds:
   - S: Toggle Starred / Unstarred for the current article (and update wallabag backend)
   - P: Toggle Public status - Public means article can be shared with a public link
   - O: Open article public link url in default browser. If article isn't public, it will open the original article link.
+  - Y: Yank (copy) URL to clipboard. If article isn't public, it will open the original article link.
   - D: Delete the selected entry.
   - q: Return to list
   - ↑ or k / ↓ or j: Go up / down

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Strubbl/wallabago/v7"
+	"github.com/atotto/clipboard"
 	"github.com/k3a/html2text"
 	"github.com/muesli/reflow/wordwrap"
 )
@@ -32,6 +33,12 @@ func openLinkInBrowser(url string) error {
 		return err
 	}
 	return nil
+}
+
+// Copy link.
+// TODO: test on macOS or windows…
+func copyLinkToClipboard(url string) error {
+	return clipboard.WriteAll(url)
 }
 
 // Retrieve index of the selected entry in model.Entries

@@ -70,19 +70,40 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 				p,
 			)
 
-		// Open entries in browser:
-		case "O":
-			entry := m.Entries[getSelectedEntryIndex(m.Entries, m.SelectedID)]
-			if err := openLinkInBrowser(entry.URL); err != nil {
-				m.Dialog.Message = "Couldn't open link in browser"
-				if m.DebugMode {
-					log.Println("Error while opening in browser")
-					log.Println(err)
-				}
-				return m, nil
+		// Open or Copy URL:
+		case "O", "Y":
+			entry := &m.Entries[getSelectedEntryIndex(m.Entries, m.SelectedID)]
+			url := entry.URL
+			// If entry is public, open the public link:
+			if entry.IsPublic {
+				url = wallabago.Config.WallabagURL + "/share/" + entry.UID
 			}
-			m.UpdateMessage = "Link opened in browser"
-			return m, tea.Tick(time.Second*3, func(t time.Time) tea.Msg {
+
+			if msg.String() == "O" {
+				// Open URL in browser:
+				if err := openLinkInBrowser(url); err != nil {
+					m.Dialog.Message = "Couldn't open link in browser"
+					if m.DebugMode {
+						log.Println("Error while opening in browser")
+						log.Println(err)
+					}
+					return m, nil
+				}
+				m.UpdateMessage = "Link opened in browser"
+			} else if msg.String() == "Y" {
+				// Copy URL:
+				if err := copyLinkToClipboard(url); err != nil {
+					m.Dialog.Message = "Couldn't copy link"
+					if m.DebugMode {
+						log.Println("Error while copying link")
+						log.Println(err)
+					}
+					return m, nil
+				}
+				m.UpdateMessage = "Link copied"
+			}
+
+			return m, tea.Tick(time.Second*5, func(t time.Time) tea.Msg {
 				return wallabagoResponseClearMsg(true)
 			})
 
@@ -162,8 +183,8 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 				p,
 			)
 
-		// Open in default browser:
-		case "O":
+		// Open or Copy URL:
+		case "O", "Y":
 			sID, _ := strconv.Atoi(m.Table.SelectedRow()[0])
 			entry := m.Entries[getSelectedEntryIndex(m.Entries, sID)]
 			url := entry.URL
@@ -172,16 +193,31 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 				url = wallabago.Config.WallabagURL + "/share/" + entry.UID
 			}
 
-			if err := openLinkInBrowser(url); err != nil {
-				m.Dialog.Message = "Couldn't open link in browser"
-				if m.DebugMode {
-					log.Println("Error while opening in browser")
-					log.Println(err)
+			if msg.String() == "O" {
+				// Open URL in browser:
+				if err := openLinkInBrowser(url); err != nil {
+					m.Dialog.Message = "Couldn't open link in browser"
+					if m.DebugMode {
+						log.Println("Error while opening in browser")
+						log.Println(err)
+					}
+					return m, nil
 				}
-				return m, nil
+				m.UpdateMessage = "Link opened in browser"
+			} else if msg.String() == "Y" {
+				// Copy URL:
+				if err := copyLinkToClipboard(url); err != nil {
+					m.Dialog.Message = "Couldn't copy link"
+					if m.DebugMode {
+						log.Println("Error while copying link")
+						log.Println(err)
+					}
+					return m, nil
+				}
+				m.UpdateMessage = "Link copied"
 			}
-			m.UpdateMessage = "Link opened in browser"
-			return m, tea.Tick(time.Second*3, func(t time.Time) tea.Msg {
+
+			return m, tea.Tick(time.Second*5, func(t time.Time) tea.Msg {
 				return wallabagoResponseClearMsg(true)
 			})
 

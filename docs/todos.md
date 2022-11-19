@@ -51,8 +51,9 @@ After MVP:
 - [x] Delete article
 - [x] Open public/original article link
 - [x] Manage sharing as public link
-- [ ] Yank/Copy URL
+- [x] Yank/Copy URL
 - [ ] Option to mark entry as read as soon as you read it 
+- [ ] Add a way to open links in content
 
 
 To Investigate:
