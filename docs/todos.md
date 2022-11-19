@@ -30,11 +30,11 @@ After MVP:
 - [ ] Improve UI
   - [-] Improve article list view
     - [x] Improve table readability
-    - [ ] Adapt table to screen size? (hide columns)
+    - [x] Adapt table to screen size? (hide columns)
     - [ ] Dynamic Sort table
       - [ ] By date
       - [ ] By title
-    - [ ] Add status in title for easier readability (and update when keybind)
+    - [x] Add status in footer for easier readability
   - [x] Improve article view
     - [x] Add reading % in article view
     - [x] Make title static at the top

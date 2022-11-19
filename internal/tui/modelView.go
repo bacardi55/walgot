@@ -110,7 +110,7 @@ func windowSizeUpdate(m *model) {
 	// Regenerate the table based on new size:
 	t := createViewTable(m.TermSize.Width, h-5)
 	if m.Ready {
-		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters, m.TermSize.Width))
 	}
 	m.Table = t
 	// Generate viewport based on screen size
@@ -343,13 +343,28 @@ func dialogView(m *model) string {
 // Create Columns.
 func createViewTableColumns(maxWidth int) []table.Column {
 	baseWidth := int(maxWidth / 20)
+	var columns []table.Column
 
-	columns := []table.Column{
-		{Title: "ID", Width: baseWidth},
-		{Title: "Status", Width: baseWidth},
-		{Title: "Title", Width: baseWidth * 12},
-		{Title: "Domain", Width: baseWidth * 4},
-		{Title: "Created", Width: baseWidth * 2},
+	if maxWidth > 130 {
+		columns = []table.Column{
+			{Title: "ID", Width: baseWidth},
+			{Title: "Status", Width: baseWidth},
+			{Title: "Title", Width: baseWidth * 12},
+			{Title: "Domain", Width: baseWidth * 4},
+			{Title: "Created", Width: baseWidth * 2},
+		}
+	} else if maxWidth > 80 {
+		columns = []table.Column{
+			{Title: "ID", Width: baseWidth},
+			{Title: "Status", Width: baseWidth},
+			{Title: "Title", Width: baseWidth * 18},
+		}
+	} else {
+		columns = []table.Column{
+			{Title: "ID", Width: 0},
+			{Title: "Title", Width: baseWidth * 20},
+		}
+
 	}
 
 	return columns
@@ -357,7 +372,7 @@ func createViewTableColumns(maxWidth int) []table.Column {
 
 // Create rows
 // TODO: create test for this function.
-func getTableRows(items []wallabago.Item, filters walgotTableFilters) []table.Row {
+func getTableRows(items []wallabago.Item, filters walgotTableFilters, maxWidth int) []table.Row {
 	r := []table.Row{}
 
 	for i := 0; i < len(items); i++ {
@@ -409,13 +424,29 @@ func getTableRows(items []wallabago.Item, filters walgotTableFilters) []table.Ro
 			title = lipgloss.NewStyle().Faint(true).Render(title)
 		}
 
-		r = append(r, table.Row{
-			id,
-			status,
-			title,
-			domainName,
-			createdAt,
-		})
+		var new table.Row
+		if maxWidth > 130 {
+			new = table.Row{
+				id,
+				status,
+				title,
+				domainName,
+				createdAt,
+			}
+		} else if maxWidth > 80 {
+			new = table.Row{
+				id,
+				status,
+				title,
+			}
+		} else {
+			new = table.Row{
+				id,
+				title,
+			}
+		}
+
+		r = append(r, new)
 	}
 
 	return r

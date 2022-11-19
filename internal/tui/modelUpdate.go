@@ -304,14 +304,14 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		if m.DebugMode {
 			log.Println("wallabagoResponseEntityMsg", len(msg))
 		}
-		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters, m.TermSize.Width))
 
 	// Added entry response:
 	case wallabagoResponseAddEntryMsg:
 		// Add new entry at the top.
 		m.Entries = append([]wallabago.Item{msg.Entry}, m.Entries...)
 		// Recalculate table rows:
-		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters, m.TermSize.Width))
 		// Wallabag API send a 200 even if the URL isn't good.
 		// Unfortunately, it means checking the content of the entry…
 		if strings.Contains(
@@ -338,7 +338,7 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		} else {
 			m.Entries = append(m.Entries[:index], m.Entries[index+1:]...)
 		}
-		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters, m.TermSize.Width))
 		// Letting user know:
 		m.UpdateMessage = "Entry has been deleted successfully"
 		return m, tea.Tick(time.Second*5, func(t time.Time) tea.Msg {
@@ -349,7 +349,7 @@ func updateListView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 	case walgotSearchEntryMsg:
 		m.Options.Filters.Search = string(msg)
 		// Recalculate table rows:
-		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+		m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters, m.TermSize.Width))
 
 	case spinner.TickMsg:
 		// Spin only if it is still displaying the reload screen:
@@ -418,7 +418,7 @@ func updatedEntryInModel(m *model, updatedEntry wallabago.Item) {
 	// The entry in the model needs to be updated to avoid refreshing all via API
 	m.Entries[getSelectedEntryIndex(m.Entries, updatedEntry.ID)] = updatedEntry
 	// Update the table rows so that's it udpated in the list view:
-	m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+	m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters, m.TermSize.Width))
 }
 
 // Manage keybinds changing filters on listView.
@@ -441,7 +441,7 @@ func listViewFiltersUpdate(msg string, m *model) {
 		m.Options.Filters.Public = !m.Options.Filters.Public
 	}
 
-	m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters))
+	m.Table.SetRows(getTableRows(m.Entries, m.Options.Filters, m.TermSize.Width))
 }
 
 // Retrieve updates variable.
