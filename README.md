@@ -55,7 +55,7 @@ See the more detailed [todo documentation page](docs/todos.md).
 
 ## More Screenshots
 
-See the [screenshots directory](docs/screenshots/) directory.
+See the [screenshots directory](docs/screenshots/index.md) directory.
 
 
 ## Help and feedback always welcome
