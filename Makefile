@@ -1,7 +1,7 @@
 GOCMD := CGO_ENABLED=0 go
 BINARY := walgot
 BINDIR := ./bin
-VERSION := 0.1.2
+VERSION := v0.2.0
 
 GOLDFLAGS := -s -w -X main.Version=$(VERSION)
 
@@ -18,15 +18,15 @@ buildAll:
 
 .PHONY: clean
 clean:
-	rm -f ${BINDIR}/${BINARY}
+	rm -f ${BINDIR}/${BINARY}*
 
 fmt:
 	go fmt ./...
 
 .PHONY: release
 release:
-	echo "Tagging version ${VERSION}"
-	git tag -a v${VERSION} -m "New released tag: v${VERSION}"
+	@echo "Tagging version $(VERSION)"
+	@./create_release_tag.sh $(VERSION)
 	GOOS=linux GOARCH=amd64 ${GOCMD} build -ldflags "$(GOLDFLAGS)" -o ${BINDIR}/${BINARY}_${VERSION}_linux_amd64
 	GOOS=linux GOARCH=arm ${GOCMD} build -ldflags "$(GOLDFLAGS)" -o ${BINDIR}/${BINARY}_${VERSION}_linux_arm
 	GOOS=linux GOARCH=arm64 ${GOCMD} build -ldflags "$(GOLDFLAGS)" -o ${BINDIR}/${BINARY}_${VERSION}_linux_arm64
