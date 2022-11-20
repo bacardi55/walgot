@@ -4,13 +4,16 @@ import (
 	"errors"
 	"net/url"
 	"os/exec"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/Strubbl/wallabago/v7"
 	"github.com/atotto/clipboard"
 	"github.com/k3a/html2text"
 	"github.com/muesli/reflow/wordwrap"
+	"github.com/muesli/reflow/wrap"
 )
 
 // Open link in default browser.
@@ -56,14 +59,16 @@ func getSelectedEntryIndex(entries []wallabago.Item, id int) int {
 // Retrieve the article content, in clean and wrap text.
 func getSelectedEntryContent(entries []wallabago.Item, index, maxWidth int) string {
 	contentHTML := entries[index].Content
-	content := html2text.HTML2Text(contentHTML)
+	content := html2text.HTML2TextWithOptions(contentHTML, html2text.WithLinksInnerText())
+	content, links := parseLinksInContent(content)
+	content += generateFootnoteLinks(links)
 
 	w := 72
 	if maxWidth < w {
 		w = maxWidth - 2
 	}
 
-	return wordwrap.String(content, w)
+	return wrap.String(wordwrap.String(content, w), w)
 }
 
 // Calculate the number of API call needed to retrieve all articles.
@@ -99,4 +104,29 @@ func isValidURL(u string) bool {
 		return false
 	}
 	return true
+}
+
+// parse links in the recieved string.
+func parseLinksInContent(content string) (string, []string) {
+	var links []string
+
+	re := regexp.MustCompile("(?i)<((https?|gopher|gemini)://[^>]*)>")
+	// Find and loop over all matching strings.
+	results := re.FindAllStringSubmatch(content, -1)
+	for i := range results {
+		content = strings.Replace(content, results[i][0], "["+strconv.Itoa(i+1)+"]", 1)
+		links = append(links, results[i][1])
+	}
+
+	return content, links
+}
+
+// Generate footnote text for links in article:
+func generateFootnoteLinks(links []string) string {
+	footnotes := "\r\n\r\n\r\nLinks:\r\n\r\n"
+	for i, l := range links {
+		footnotes += "[" + strconv.Itoa(i+1) + "]: " + l + "\r\n"
+	}
+
+	return footnotes
 }

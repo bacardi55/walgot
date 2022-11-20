@@ -38,8 +38,10 @@ After MVP:
   - [x] Improve article view
     - [x] Add reading % in article view
     - [x] Make title static at the top
-    - [ ] Better management for links to avoid breaking
+    - [x] Better management for links to avoid breaking
+      - [ ] Add a way to open links present in content
     - [ ] Better management for images url
+      - [ ] Add a way to open images (via external app) present in content
     - [x] Adapt reading view to screen size
   - [x] Display possible API errors in a dialog box
 - [ ] Simplify start
@@ -54,7 +56,6 @@ After MVP:
 - [x] Manage sharing as public link
 - [x] Yank/Copy URL
 - [ ] Option to mark entry as read as soon as you read it 
-- [ ] Add a way to open links in content
 
 
 To Investigate:
