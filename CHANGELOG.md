@@ -31,7 +31,7 @@
 
 ### others
 
-7d18482 - Maintenance: Upgrade dependencies
-Add some unit tests (needs a lot more)
-Add automated build on sourcehut
+- Maintenance: Upgrade dependencies
+- Add some unit tests (needs a lot more)
+- Add automated build on sourcehut
 

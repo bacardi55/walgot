@@ -5,7 +5,6 @@
 
 Official repository and project is on [sourcehut](https://git.sr.ht/~bacardi55/walgot). Github and codeberg are only mirrors. This is where [binaries are uploaded](docs/install.md#via-binary-files).
 
-
 ## What is walgot?
 
 Walgot is a TUI [wallabag](https://wallabag.org) client. Wallabag is an opensource "read it later" application that can be selfhosted. This application aims to be an easy and interactive TUI client for it.
@@ -32,10 +31,35 @@ See the [installation and configuration documentation page](docs/install.md).
 
 ### Keybinds
 
-See the [keybind documentation page](docs/keybinds.md)
+At any time, press `?` key to display the help and `ctrl+c` to quit.
+
+See the full list on the [keybind documentation page](docs/keybinds.md).
 
 
-## Remaining TODOs:
+## Existing features and remaining TODOs:
 
-See the [todo documentation page](docs/todos.md).
+High level available features at this stage:
 
+- [x] Retrieve articles from wallabag
+- [x] List articles view - columns depends on screen size.
+- [x] Article detail view
+- [x] Action on article
+- [x] Status update (toggle read, starred and public status)
+- [x] Configurable (see: )
+- [x] Add Search (more a filter of article's title)
+- [x] Add / Delete entry to wallabag
+- [x] Open public/original article link
+- [x] Yank/Copy public/original article URL
+
+See the more detailed [todo documentation page](docs/todos.md).
+
+## More Screenshots
+
+See the [screenshots directory](docs/screenshots/) directory.
+
+
+## Help and feedback always welcome
+
+Feedback or request? Send an email to the [dev mailing list](mailto:~bacardi55/walgot-devel@lists.sr.ht). You can also [read the mailing list archive](https://lists.sr.ht/~bacardi55/walgot-devel).
+
+You can subscribe to the [announcement mailing list](https://lists.sr.ht/~bacardi55/walgot-announce).
