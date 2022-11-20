@@ -61,6 +61,11 @@ func (m model) headerView() string {
 func (m model) footerView() string {
 	var text string
 
+	// If height is very limited, remove footer completely:
+	if m.TermSize.Height < 30 {
+		return ""
+	}
+
 	if len(m.UpdateMessage) > 0 {
 		text += lipgloss.NewStyle().Italic(true).Render(m.UpdateMessage)
 	} else if !m.Reloading {
@@ -71,7 +76,9 @@ func (m model) footerView() string {
 		text += " articles loaded from wallabag"
 	}
 
-	text += "\n[r]eload -- Toggles: [u]nread, [s]tarred, [a]rchived -- [h]elp"
+	if m.TermSize.Width > 80 {
+		text += "\n[r]eload -- Toggles: [u]nread, [s]tarred, [a]rchived -- [h]elp"
+	}
 
 	return lipgloss.
 		NewStyle().
