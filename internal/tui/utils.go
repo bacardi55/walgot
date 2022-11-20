@@ -58,10 +58,7 @@ func getSelectedEntryIndex(entries []wallabago.Item, id int) int {
 
 // Retrieve the article content, in clean and wrap text.
 func getSelectedEntryContent(entries []wallabago.Item, index, maxWidth int) string {
-	contentHTML := entries[index].Content
-	content := html2text.HTML2TextWithOptions(contentHTML, html2text.WithLinksInnerText())
-	content, links := parseLinksInContent(content)
-	content += generateFootnoteLinks(links)
+	content := getContentForViewport(entries[index].Content)
 
 	w := 72
 	if maxWidth < w {
@@ -106,6 +103,18 @@ func isValidURL(u string) bool {
 	return true
 }
 
+func getContentForViewport(contentHTML string) string {
+	content, links := getCleanedContentAndLinks(contentHTML)
+	content += "\r\n\r\n\r\n" + generateFootnoteLinks(links)
+
+	return content
+}
+
+func getCleanedContentAndLinks(contentHTML string) (string, []string) {
+	content := html2text.HTML2TextWithOptions(contentHTML, html2text.WithLinksInnerText())
+	return parseLinksInContent(content)
+}
+
 // parse links in the recieved string.
 func parseLinksInContent(content string) (string, []string) {
 	var links []string
@@ -123,7 +132,7 @@ func parseLinksInContent(content string) (string, []string) {
 
 // Generate footnote text for links in article:
 func generateFootnoteLinks(links []string) string {
-	footnotes := "\r\n\r\n\r\nLinks:\r\n\r\n"
+	footnotes := "Links:\r\n\r\n"
 	for i, l := range links {
 		footnotes += "[" + strconv.Itoa(i+1) + "]: " + l + "\r\n"
 	}

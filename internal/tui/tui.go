@@ -322,7 +322,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Now send to the right sub-update function:
 	if m.SelectedID > 0 {
-		return updateEntryView(msg, m)
+		return updateEntryView(msg, &m)
 	}
 	return updateListView(msg, m)
 }

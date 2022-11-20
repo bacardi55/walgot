@@ -24,7 +24,7 @@ func updateHelpView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 }
 
 // Manage update messages for the detail entry view.
-func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+func updateEntryView(msg tea.Msg, m *model) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -58,7 +58,7 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		// Update article (archive, starred, public):
 		case "A", "S", "P":
 			sID := m.SelectedID
-			a, s, p, action := sendEntryUpdate(msg.String(), m.SelectedID, &m)
+			a, s, p, action := sendEntryUpdate(msg.String(), m.SelectedID, m)
 			if m.DebugMode {
 				log.Println("Update entry action:", action, a, s)
 			}
@@ -69,6 +69,20 @@ func updateEntryView(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 				s,
 				p,
 			)
+
+		// Open links in entry:
+		case "L":
+			// Configure textinput:
+			m.Dialog.TextInput.Placeholder = "Link number"
+			m.Dialog.TextInput.CharLimit = 3
+			// Display textinput
+			m.Dialog.ShowInput = true
+			// Add search button:
+			m.Dialog.Action = "open link"
+			// Dialog title:
+			m.Dialog.Message = "Enter the link number to open:\n"
+			// Set current view to dialog:
+			m.CurrentView = "dialog"
 
 		// Open or Copy URL:
 		case "O", "Y":
@@ -391,14 +405,56 @@ func updateDialogView(msg tea.Msg, m *model) (tea.Model, tea.Cmd) {
 			m.CurrentView = "list"
 
 			// Per action command:
-			if action == "search" {
+			switch action {
+			case "search":
 				// Start search, value needs to be copied.
 				cmds = append(cmds, func() tea.Msg {
 					return walgotSearchEntryMsg(input)
 				})
-			} else if action == "add" {
-				// Save entry:
+
+			// Save entry:
+			case "add":
 				return m, requestWallabagAddEntry(input)
+
+			case "open link":
+				_, links := getCleanedContentAndLinks(
+					m.Entries[getSelectedEntryIndex(m.Entries, m.SelectedID)].Content,
+				)
+				selected, err := strconv.Atoi(input)
+				if err != nil {
+					m.Dialog.Message = "Couldn't find link number " + input
+					if m.DebugMode {
+						log.Println("Error while opening link")
+						log.Println(err)
+					}
+					return m, nil
+				}
+
+				if selected < 1 || selected > len(links) {
+					m.Dialog.Message = "No link numbered " + input
+					if m.DebugMode {
+						log.Println("Error while opening link")
+						log.Println(err)
+					}
+					return m, nil
+				}
+
+				if err := openLinkInBrowser(links[selected-1]); err != nil {
+					m.Dialog.Message = "Couldn't open link"
+					if m.DebugMode {
+						log.Println("Error while opening link")
+						log.Println(err)
+					}
+					return m, nil
+				}
+				m.UpdateMessage = "Link opened"
+
+				cmds = append(
+					cmds,
+					tea.Tick(time.Second*5, func(t time.Time) tea.Msg {
+						return wallabagoResponseClearMsg(true)
+					}),
+				)
 			}
 		}
 	}

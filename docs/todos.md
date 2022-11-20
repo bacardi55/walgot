@@ -39,7 +39,7 @@ After MVP:
     - [x] Add reading % in article view
     - [x] Make title static at the top
     - [x] Better management for links to avoid breaking
-      - [ ] Add a way to open links present in content
+      - [x] Add a way to open links present in content
     - [ ] Better management for images url
       - [ ] Add a way to open images (via external app) present in content
     - [x] Adapt reading view to screen size
