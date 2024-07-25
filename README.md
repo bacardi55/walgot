@@ -1,9 +1,10 @@
+Official repository and project is on [soucehut](https://git.sr.ht/~bacardi55/walgot). This repository is archived.
+
 # Walgot - a WALlabag GO Tui client
 
 [![builds.sr.ht status](https://builds.sr.ht/~bacardi55/walgot.svg)](https://builds.sr.ht/~bacardi55/walgot?)
 [![license: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-informational.svg)](LICENSE)
 
-Official repository and project is on [sourcehut](https://git.sr.ht/~bacardi55/walgot). Github and codeberg are only mirrors. This is where [binaries are uploaded](docs/install.md#via-binary-files).
 
 ## What is walgot?
 
